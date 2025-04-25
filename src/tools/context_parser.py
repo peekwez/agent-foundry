@@ -1,8 +1,8 @@
 import os
-import rich
 from mimetypes import guess_type
-from markitdown import MarkItDown
 
+import rich
+from markitdown import MarkItDown
 from openai import OpenAI
 
 

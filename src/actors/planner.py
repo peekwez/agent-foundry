@@ -22,7 +22,10 @@ planner = build_agent(
         "Return ONLY valid JSON matching the Plan schema. The revision "
         "should be for this plan should be 1 and the status of steps should "
         "be pending. The agents are list below: \n\n"
-        f"{AGENT_REGISTRY_SUFFIX}"
+        f"{AGENT_REGISTRY_SUFFIX}\n\n"
+        "Fetch the context memory value to get information regarding available "
+        "data to help with the planning if they are relevant. The key to use is "
+        "'blackboard:<plan id>' and the value is a JSON object\n\n"
     ),
     output_type=Plan,
 )
@@ -41,9 +44,12 @@ re_planner = build_agent(
         "tagged as completed. The agents are list below: \n\n"
         f"{100 * '-'}"
         f"{AGENT_REGISTRY_SUFFIX}\n\n",
-        "Read the `context` memory value to get information regarding available data "
-        "in memory. You should then fetch the existing `plan` and the latest "
-        "evaluation results to use as additional context to replan the task.",
+        "Fetch the context memory value to get information regarding available "
+        "data to help with the re-planning if they are relevant. The key to use is "
+        "'blackboard:<plan id>' and the value is a JSON object\n\n"
+        "Fetch the existing plan from memory to know what steps are available and "
+        "what dependencies exist. The key to use is 'plan:<plan id>' and the value "
+        "is a JSON object\n\n",
     ),
     output_type=Plan,
 )

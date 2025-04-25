@@ -128,7 +128,6 @@ def build_agent(
     extra_tools: list | None = None,
     **kwargs,
 ):
-
     return Agent(
         name=name,
         model=kwargs.pop("model", OPENAI_MODEL),
