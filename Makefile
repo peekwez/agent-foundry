@@ -25,3 +25,7 @@ coverage:
 	uv run coverage run -m pytest
 	uv run coverage xml -o coverage.xml
 	uv run coverage report -m --fail-under=95
+
+.PHONY: run
+run:
+	uv run -m src.main

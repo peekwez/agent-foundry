@@ -48,7 +48,7 @@ disallow_untyped_calls = false
 # ignore_missing_imports = true
 
 [tool.coverage.run]
-source = ["tests", "core", "tools", "memory", "actors"]
+source = ["tests", "src"]
 
 [tool.coverage.report]
 show_missing = true
