@@ -28,4 +28,4 @@ coverage:
 
 .PHONY: run
 run:
-	uv run -m src.main
+	uv run src/main.py

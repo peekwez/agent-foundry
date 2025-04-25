@@ -1,4 +1,6 @@
 import json
+import uuid
+import warnings
 
 from agents import Agent, ModelSettings, function_tool
 from core.config import OPENAI_MODEL
@@ -46,13 +48,25 @@ def write_memory(key: str, description: str, value: str) -> str:
             key (str): The key to add to the blackboard.
             description (str): A description of the value being written.
         """
-        board = _memory.get("blackboard")
+        plan_id = key.lower().split(":")[1]
+
+        # Validate that plan_id is a valid UUID
+        try:
+            uuid.UUID(plan_id)
+        except ValueError:
+            message = (
+                f"Invalid plan ID: {plan_id}. Must be a valid UUID."
+                "Every value in memory must be stored with a plan id."
+            )
+            warnings.warn(message, UserWarning, stacklevel=2)
+            return message
+
+        board = _memory.get(f"blackboard:{plan_id}")
         if board is None:
             board = "{}"
-        value = {key: description}
         board = json.loads(board)
-        board.update(value)
-        _memory.set("blackboard", json.dumps(board))
+        board.update({key: description})
+        _memory.set(f"blackboard:{plan_id}", json.dumps(board))
 
     update_blackboard(key.lower(), description)
     _memory.set(key.lower(), value)
@@ -62,7 +76,7 @@ def write_memory(key: str, description: str, value: str) -> str:
 DEFAULT_TOOLS = [read_memory, write_memory]
 
 PROMPT_SUFFIX = (
-    "\nYou have access to the following default tools:\n\n"
+    "\n\nYou have access to the following default tools:\n\n"
     "1. ReadMemory: Fetch a JSON-serializable value from shared memory.\n"
     "2. WriteMemory: Write a JSON-serializable value to shared memory.\n\n"
     "Use these tools to store and retrieve results related to your tasks.\n\n"
@@ -74,8 +88,10 @@ PROMPT_SUFFIX = (
     "other agents. The blackboard contains the keys and description of the \n"
     "data stored. This will help you decide which data to use for your task.\n\n"
     "Fetch the relevant data from memory to use as input for your task. \n"
-    "You can use the 'ReadMemory' tool to do this. The key format is \n"
-    "'result:<plan id>:<agent name>:<step id>'.\n\n"
+    "The relevant data can be the results from other agents or a static context \n"
+    "from a file store in memory (i.e. use key 'context:<plan id>:<file name>'). \n"
+    "You can use the 'ReadMemory' tool to fetch the data. The key format is \n"
+    "'result:<plan id>:<agent name>:<step id>' or 'context:<plan id>:<file name>'.\n\n"
     "When you have completed your task, use the 'WriteMemory' tool to store the \n"
     "result. Always write the result of your task to memory using the key format \n"
     "'result:<plan id>:<agent name>:<step id>' based on the plan.\n\n"
@@ -92,13 +108,13 @@ def build_agent(
     extra_tools: list | None = None,
     **kwargs,
 ):
-    tools = (
-        DEFAULT_TOOLS + (extra_tools or []) if "Planner" not in name else [read_memory]
-    )
+    is_planner = "Planner" in name
+    is_builder = "Context Builder" in name
+    tools = DEFAULT_TOOLS + (extra_tools or []) if not is_planner else [read_memory]
 
     model_name = kwargs.pop("model", OPENAI_MODEL)
     instructions = (
-        instructions + PROMPT_SUFFIX if "Planner" not in name else instructions
+        instructions if (is_planner or is_builder) else instructions + PROMPT_SUFFIX
     )
     return Agent(
         name=name,
