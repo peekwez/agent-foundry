@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Literal
+from typing import Literal
 
 
 @dataclass
@@ -14,7 +14,7 @@ class PlanStep:
     """ The revision number of the step.  Incremented by 1 for each revision. """
     status: Literal["pending", "completed"]
     """ The status of the step. """
-    depends_on: List[int]
+    depends_on: list[int]
     """ A list of step IDs that this step depends on. """
 
 
@@ -26,7 +26,7 @@ class Plan:
     goal: str
     """ The goal of the plan. """
 
-    steps: List[PlanStep]
+    steps: list[PlanStep]
     """ A plan is a collection of steps to be executed by different agents. """
 
 

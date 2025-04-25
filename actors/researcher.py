@@ -1,6 +1,5 @@
-from agents import WebSearchTool
-
 from actors.base import build_agent
+from agents import WebSearchTool
 
 researcher = build_agent(
     name="Researcher",

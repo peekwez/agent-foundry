@@ -1,9 +1,8 @@
 import json
-from typing import List, Optional
-from agents import Agent, function_tool, ModelSettings
 
-from memory.redis_memory import RedisMemory
+from agents import Agent, ModelSettings, function_tool
 from core.config import OPENAI_MODEL
+from memory.redis_memory import RedisMemory
 
 _memory = RedisMemory()
 
@@ -62,44 +61,35 @@ def write_memory(key: str, description: str, value: str) -> str:
 
 DEFAULT_TOOLS = [read_memory, write_memory]
 
-PROMPT_SUFFIX = """
-\nYou have access to the following default tools:
-
-1. ReadMemory: Fetch a JSON-serializable value from shared memory.
-2. WriteMemory: Write a JSON-serializable value to shared memory.
-
-Use these tools to store and retrieve results related to your tasks.
-
-First fetch the plan (i.e., use 'plan:<plan id>' key) from memory to know what steps are 
-available and what dependencies exist. You can use the plan to further understand
-your role in the task.
-
-Next fetch the memory metadata (i.e. use key 'blackboard:<plan id>') from memory to 
-know what data exists in memory based on work done by other agents. The blackboard 
-contains the keys and description of the data stored. This will help you 
-decide which data to use for your task.
-
-Fetch the relevant data from memory to use as input for your task. You can use the
-'ReadMemory' tool to do this. The key format is 'result:<plan id>:<agent name>:<step id>'.
-
-When you have completed your task, use the 'WriteMemory' tool to store the 
-result. Always write the result of your task to memory using the key format 
-'result:<plan id>:<agent name>:<step id>' based on the plan.
-
-Respond with 'Agent has updated the blackboard and memory for plan: <plan id> 
-and step: <step id>'.
-
-Do not use any other plan id or step id other than the one provided in the input
-and stored in context fetched from memory.
-
-
-"""
+PROMPT_SUFFIX = (
+    "\nYou have access to the following default tools:\n\n"
+    "1. ReadMemory: Fetch a JSON-serializable value from shared memory.\n"
+    "2. WriteMemory: Write a JSON-serializable value to shared memory.\n\n"
+    "Use these tools to store and retrieve results related to your tasks.\n\n"
+    "First fetch the plan (i.e., use 'plan:<plan id>' key) from memory \n"
+    "to know what steps are available and what dependencies exist. You \n"
+    "can use the plan to further understand your role in the task.\n\n"
+    "Next fetch the memory metadata (i.e. use key 'blackboard:<plan id>') \n"
+    "from memory to know what data exists in memory based on work done by \n"
+    "other agents. The blackboard contains the keys and description of the \n"
+    "data stored. This will help you decide which data to use for your task.\n\n"
+    "Fetch the relevant data from memory to use as input for your task. \n"
+    "You can use the 'ReadMemory' tool to do this. The key format is \n"
+    "'result:<plan id>:<agent name>:<step id>'.\n\n"
+    "When you have completed your task, use the 'WriteMemory' tool to store the \n"
+    "result. Always write the result of your task to memory using the key format \n"
+    "'result:<plan id>:<agent name>:<step id>' based on the plan.\n\n"
+    "Respond with 'Agent has updated the blackboard and memory for plan: <plan id> \n"
+    "and step: <step id>'.\n\n"
+    "Do not use any other plan id or step id other than the one provided in the \n"
+    "input and stored in context fetched from memory.\n\n"
+)
 
 
 def build_agent(
     name: str,
     instructions: str,
-    extra_tools: Optional[List] = None,
+    extra_tools: list | None = None,
     **kwargs,
 ):
     tools = (

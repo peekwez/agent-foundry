@@ -1,7 +1,11 @@
-from redis import Redis
-import json, uuid
+import json
+import uuid
 from typing import Any
+
+from redis import Redis
+
 from core.config import REDIS_URL
+
 
 class RedisMemory:
     def __init__(self):
@@ -15,7 +19,9 @@ class RedisMemory:
         return None if v is None else json.loads(v)
 
     def append_history(self, thread_id: str, role: str, content: str):
-        self.r.rpush(f"history:{thread_id}", json.dumps({"role": role, "content": content}))
+        self.r.rpush(
+            f"history:{thread_id}", json.dumps({"role": role, "content": content})
+        )
 
     def fetch_history(self, thread_id: str, k: int = 20):
         raw = self.r.lrange(f"history:{thread_id}", -k, -1)

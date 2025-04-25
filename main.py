@@ -1,11 +1,11 @@
-import json
 import asyncio
+import json
 
 from dotenv import load_dotenv
-from agents import Runner, trace, gen_trace_id, Agent, custom_span
 
-from actors.planner import planner, re_planner
 from actors.manager import TaskManager
+from actors.planner import planner, re_planner
+from agents import Agent, Runner, custom_span, gen_trace_id, trace
 from core.models import Plan, PlanStep
 from memory.redis_memory import RedisMemory
 
@@ -21,8 +21,8 @@ async def plan_task(guid: str, agent: Agent, input: str) -> Plan:
 
 async def fetch_output(plan: Plan):
     mem = RedisMemory()
-    editor: PlanStep = list(
-        sorted((filter(lambda x: x.agent.lower().find("editor") > -1, plan.steps)))
+    editor: PlanStep = sorted(
+        filter(lambda x: x.agent.lower().find("editor") > -1, plan.steps)
     )[-1]
     value = mem.get(f"result:{plan.id}:{editor.agent}:{editor.id}")
     if not value:
@@ -37,17 +37,18 @@ async def run_agent(input: str) -> str:
     with trace(
         workflow_name=f"DAG Writer Agent: {guid.upper()[:8]}", trace_id=trace_id
     ):
-
         input = f"{input}\n\nUse the given UUID: {guid} for the plan id"
         plan = await plan_task(guid, planner, input)
 
         # Execute tasks
         for i in range(3):
             with custom_span(
-                name=f"Revision: {i+1}",
-                data=dict(
-                    id=guid, turn="TaskManager", description="Executing the plan"
-                ),
+                name=f"Revision: {i + 1}",
+                data={
+                    "id": guid,
+                    "name": "TaskManager",
+                    "description": "Executing the plan",
+                },
             ):
                 tasks = TaskManager(plan)
                 score = await tasks.run()

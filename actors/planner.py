@@ -1,11 +1,13 @@
 from actors.base import build_agent
-from core.models import Plan
 from actors.manager import AGENT_REGISTRY
+from core.models import Plan
 
-
-AGENT_REGISTRY_SUFFIX = f"{100*'-'}\n\n".join(
+AGENT_REGISTRY_SUFFIX = f"{100 * '-'}\n\n".join(
     [
-        f">> Agent Name: {agent.name}\n>> Agent Instructions: {agent.instructions.split('You have access')[0]}"
+        (
+            f">> Agent Name: {agent.name}\n"
+            f">> Agent Instructions: {agent.instructions.split('You have access')[0]}"
+        )
         for _, agent in AGENT_REGISTRY.items()
     ]
 )
@@ -37,11 +39,11 @@ re_planner = build_agent(
         "The new steps should form part of the next revision and the status "
         "of the new steps should be tagged as pending with the existing steps"
         "tagged as completed. The agents are list below: \n\n"
-        f"{100*'-'}"
+        f"{100 * '-'}"
         f"{AGENT_REGISTRY_SUFFIX}\n\n",
-        "Read the `context` memory value to get information regarding available data in "
-        "memory. You should then fetch the existing `plan` and the latest evaluation "
-        "results to use as additional context to replan the task.",
+        "Read the `context` memory value to get information regarding available data "
+        "in memory. You should then fetch the existing `plan` and the latest "
+        "evaluation results to use as additional context to replan the task.",
     ),
     output_type=Plan,
 )

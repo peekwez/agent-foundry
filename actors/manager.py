@@ -1,18 +1,17 @@
-import json
 import asyncio
-from typing import Dict
-from agents import Runner
+import json
 
-from core.models import Plan, PlanStep, Score
-from memory.redis_memory import RedisMemory
-from actors.researcher import researcher
-from actors.extractor import extractor
-from actors.writer import writer
+from actors.analyzer import analyzer
 from actors.editor import editor
 from actors.evaluator import evaluator
-from actors.analyzer import analyzer
+from actors.extractor import extractor
+from actors.researcher import researcher
+from actors.writer import writer
+from agents import Runner
+from core.models import Plan, PlanStep, Score
+from memory.redis_memory import RedisMemory
 
-AGENT_REGISTRY: Dict[str, object] = {
+AGENT_REGISTRY: dict[str, object] = {
     "Researcher": researcher,
     "Extractor": extractor,
     "Writer": writer,
@@ -49,14 +48,10 @@ class TaskManager:
             for sid in done:
                 pending.pop(sid, None)
 
-        eval: PlanStep = list(
-            sorted(
-                (
-                    filter(
-                        lambda x: x.agent.lower().find("evaluator") > -1,
-                        self.plan.steps,
-                    )
-                )
+        eval: PlanStep = sorted(
+            filter(
+                lambda x: x.agent.lower().find("evaluator") > -1,
+                self.plan.steps,
             )
         )[-1]
         value = self.mem.get(f"result:{eval.agent}:{eval.id}")
