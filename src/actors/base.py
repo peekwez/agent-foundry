@@ -66,7 +66,7 @@ def write_memory(key: str, description: str, value: str) -> str:
             board = "{}"
         board = json.loads(board)
         board.update({key: description})
-        _memory.set(f"blackboard:{plan_id}", json.dumps(board))
+        _memory.set(f"blackboard:{plan_id}", json.dumps(board, indent=2))
 
     update_blackboard(key.lower(), description)
     _memory.set(key.lower(), value)
@@ -102,25 +102,38 @@ PROMPT_SUFFIX = (
 )
 
 
+def get_default_tools(name: str, extra_tools: list | None = None):
+    """
+    Get the tools for the agent based on its name.
+    """
+    is_planner = "Planner" in name
+    is_builder = "Context Builder" in name
+    if is_planner:
+        return [read_memory] + (extra_tools or [])
+    elif is_builder:
+        return extra_tools or []
+    else:
+        return DEFAULT_TOOLS + (extra_tools or [])
+
+
+def get_instructions(name: str, instructions: str):
+    is_planner = "Planner" in name
+    is_builder = "Context Builder" in name
+    return instructions if (is_planner or is_builder) else instructions + PROMPT_SUFFIX
+
+
 def build_agent(
     name: str,
     instructions: str,
     extra_tools: list | None = None,
     **kwargs,
 ):
-    is_planner = "Planner" in name
-    is_builder = "Context Builder" in name
-    tools = DEFAULT_TOOLS + (extra_tools or []) if not is_planner else [read_memory]
 
-    model_name = kwargs.pop("model", OPENAI_MODEL)
-    instructions = (
-        instructions if (is_planner or is_builder) else instructions + PROMPT_SUFFIX
-    )
     return Agent(
         name=name,
-        model=model_name,
-        instructions=instructions,
-        tools=tools,
+        model=kwargs.pop("model", OPENAI_MODEL),
+        instructions=get_instructions(name, instructions),
+        tools=get_default_tools(name, extra_tools),
         tool_use_behavior="run_llm_again",
         model_settings=ModelSettings(tool_choice="required"),
         **kwargs,

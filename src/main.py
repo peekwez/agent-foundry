@@ -1,5 +1,5 @@
 import asyncio
-
+import json
 import rich
 from dotenv import load_dotenv
 
@@ -14,6 +14,12 @@ from memory.redis_memory import RedisMemory
 async def build_context(guid: str, agent: Agent, input: str) -> Context:
     context_result = await Runner.run(agent, input=input, max_turns=20)
     context: Context = context_result.final_output
+    blackboard = {}
+    for item in context.contexts:
+        key = f"context:{guid}:{item.file_path_or_url}"
+        blackboard[key] = item.description
+    key = f"blackboard:{guid}"
+    RedisMemory().set(key, json.dumps(blackboard, indent=2))
     rich.print(f">> CONTEXT \n {context}")
     return context
 
