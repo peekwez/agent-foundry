@@ -1,7 +1,3 @@
-# import json
-# import uuid
-# from typing import Any
-
 from redis import Redis
 
 from core.config import REDIS_URL

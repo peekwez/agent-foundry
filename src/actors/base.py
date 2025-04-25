@@ -4,7 +4,7 @@ import warnings
 
 from agents import Agent, ModelSettings, function_tool
 from core.config import OPENAI_MODEL
-from memory.redis_memory import RedisMemory
+from tools.redis_memory import RedisMemory
 
 _memory = RedisMemory()
 

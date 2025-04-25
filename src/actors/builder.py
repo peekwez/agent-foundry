@@ -1,7 +1,7 @@
 from actors.base import build_agent
 from agents import function_tool
 from core.models import Context
-from memory.redis_memory import RedisMemory
+from tools.redis_memory import RedisMemory
 from tools.context_parser import ContextParser
 
 _context_parser = ContextParser()

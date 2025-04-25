@@ -10,7 +10,7 @@ from actors.researcher import researcher
 from actors.writer import writer
 from agents import Agent, Runner
 from core.models import Plan, PlanStep, Score
-from memory.redis_memory import RedisMemory
+from tools.redis_memory import RedisMemory
 
 AGENT_REGISTRY: dict[str, Agent] = {
     "Researcher": researcher,

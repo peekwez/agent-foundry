@@ -1,6 +1,7 @@
 import asyncio
 import json
 import pathlib
+
 import rich
 from dotenv import load_dotenv
 
@@ -9,8 +10,7 @@ from actors.manager import TaskManager
 from actors.planner import planner, re_planner
 from agents import Agent, Runner, custom_span, gen_trace_id, trace
 from core.models import Context, Plan, PlanStep
-from memory.redis_memory import RedisMemory
-
+from tools.redis_memory import RedisMemory
 
 _memory = RedisMemory()
 
@@ -18,7 +18,6 @@ _memory = RedisMemory()
 async def build_context(
     guid: str, agent: Agent, context_input: str | list | dict
 ) -> Context:
-
     if isinstance(context_input, str):
         context_input = context_input.strip()
     elif isinstance(context_input, dict):
@@ -62,7 +61,6 @@ async def plan_task(guid: str, agent: Agent, user_input: str) -> Plan:
 async def execute_plan(guid: str, plan: Plan, revisions: int = 3) -> Plan:
     revised_plan = plan
     for i in range(1, revisions + 1):
-
         with custom_span(
             name=f"Plan Executor - Rev {i}",
             data={
@@ -112,7 +110,6 @@ async def run_agent(
     env_file: str = ".env",
     revisions: int = 3,
 ) -> str:
-
     load_dotenv(env_file, override=True)
 
     trace_id = gen_trace_id()
@@ -182,6 +179,5 @@ async def test_mortgage():
 
 
 if __name__ == "__main__":
-
     asyncio.run(test_mortgage())
     # asyncio.run(test_research())
