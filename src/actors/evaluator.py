@@ -10,5 +10,6 @@ evaluator = build_agent(
         "explaining the reasoning behind the score. "
     ),
     model="o3",
+    task_agent=True,
     output_type=Score,
 )

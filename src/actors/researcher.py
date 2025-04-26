@@ -8,5 +8,6 @@ researcher = build_agent(
         "and synthesize concise notes."
     ),
     extra_tools=[WebSearchTool()],
+    task_agent=True,
     model="gpt-4o",
 )

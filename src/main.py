@@ -10,14 +10,28 @@ from actors.manager import TaskManager
 from actors.planner import planner, re_planner
 from agents import Agent, Runner, custom_span, gen_trace_id, trace
 from core.models import Context, Plan, PlanStep
-from tools.redis_memory import RedisMemory
+from tools.redis_memory import get_memory
 
-_memory = RedisMemory()
+_memory = get_memory()
 
 
 async def build_context(
-    guid: str, agent: Agent, context_input: str | list | dict
+    plan_id: str, agent: Agent, context_input: str | list | dict
 ) -> Context:
+    """
+    Build context for the task using the context builder agent.
+
+    Args:
+        plan_id (str): The unique identifier for the plan.
+        agent (Agent): The context builder agent.
+        context_input (str | list | dict): Input for the context builder.
+
+    Returns:
+        Context: The built context object with the descriptions of the context items.
+
+    Raises:
+        ValueError: If the context input type is invalid.
+    """
     if isinstance(context_input, str):
         context_input = context_input.strip()
     elif isinstance(context_input, dict):
@@ -27,74 +41,114 @@ async def build_context(
     else:
         raise ValueError("Invalid context input type")
 
-    input = f"{context_input}\n\nUse the given UUID: {guid} for the plan id"
+    input = f"{context_input}\n\nUse the given UUID: {plan_id} for the plan id"
     result = await Runner.run(agent, input=input, max_turns=20)
     context: Context = result.final_output
 
     blackboard = {}
     for x in context.contexts:
-        blackboard.update({f"context:{guid}:{x.file_path_or_url}": x.description})
+        key = f"context|{plan_id}|{x.file_path_or_url}"
+        blackboard.update({key: x.description})
 
-    _memory.set(f"blackboard:{guid}", json.dumps(blackboard, indent=2))
+    key = f"blackboard|{plan_id}"
+    _memory.hset(key, mapping=blackboard)
     size = len(context.contexts)
 
-    rich.print(f">> Context for {size} items built successfully ...")
+    rich.print(f"✅ Context for {size} items built successfully ...")
     return context
 
 
-async def plan_task(guid: str, agent: Agent, user_input: str) -> Plan:
-    input = f"{user_input}\n\nUse the given UUID: {guid} for the plan id"
-    result = await Runner.run(agent, input=input, max_turns=8)
+async def plan_task(plan_id: str, agent: Agent, user_input: str) -> Plan:
+    """
+    Plan the task using the planner agent.
+
+    Args:
+        plan_id (str): The unique identifier for the plan.
+        agent (Agent): The planner agent.
+        user_input (str): The user input for the task.
+
+    Returns:
+        Plan: The generated plan object with the steps for the task.
+    """
+    input = f"{user_input}\n\nUse the given UUID: {plan_id} for the plan id"
+    result = await Runner.run(agent, input=input, max_turns=20)
     plan: Plan = result.final_output
 
-    _memory.set(f"plan:{guid}", plan.model_dump_json(indent=2))
+    key = f"plan|{plan_id}"
+    _memory.set(key, value=plan.model_dump_json())
     size = len(plan.steps)
 
     if agent.name == "Planner":
-        rich.print(f">> Planning for task completed with {size} steps ...")
+        rich.print(f"✅ Planning for task completed with {size} steps ...")
     elif agent.name == "Re-Planner":
         new_size = len([s for s in plan.steps if s.status == "pending"])
-        rich.print(f">> Re-planning for task completed with {new_size} new steps ...")
+        rich.print(f" ✅ Re-planning for task completed with {new_size} new steps ...")
     return plan
 
 
-async def execute_plan(guid: str, plan: Plan, revisions: int = 3) -> Plan:
+async def execute_plan(plan_id: str, plan: Plan, revisions: int = 3) -> Plan:
+    """
+    Execute the plan using the task manager and replan if needed.
+
+    Args:
+        plan_id (str): The unique identifier for the plan.
+        plan (Plan): The plan object with the steps for the task.
+        revisions (int): The number of revisions to perform if needed.
+
+    Returns:
+        Plan: The revised plan object after executing the task.
+    """
+
     revised_plan = plan
-    for i in range(1, revisions + 1):
-        with custom_span(
-            name=f"Plan Executor - Rev {i}",
-            data={
-                "id": guid,
-                "name": "Plan Executor",
-                "description": "Executing the plan for the task",
-            },
-        ):
+    for rev in range(1, revisions + 1):
+        name = f"Plan Executor - Rev {rev}"
+        data = {"Revision": rev, "Plan ID": plan_id}
+        with custom_span(name=name, data=data):
             tasks = TaskManager(revised_plan)
             score = await tasks.run()
-
             if score.score == "pass":
                 break
-
-        revised_plan = plan_task(guid, re_planner, input)
-
+        revised_plan = plan_task(plan_id, re_planner, input)
     return revised_plan
 
 
 async def fetch_output(plan: Plan):
-    mem = RedisMemory()
-    editor: PlanStep = sorted(
-        filter(lambda x: x.agent.lower().find("editor") > -1, plan.steps)
-    )[-1]
-    value = mem.get(f"result:{plan.id}:{editor.agent}:{editor.id}".lower())
+    """
+    Fetch the output from the last editor step in the plan.
+
+    Args:
+        plan (Plan): The plan object with the steps for the task.
+
+    Returns:
+        str: The output from the last editor step in the plan.
+
+    Raises:
+        ValueError: If no result is found in memory.
+    """
+
+    def fn(x: PlanStep):
+        return "editor" in x.agent.lower()
+
+    editor: PlanStep = sorted(fn, plan.steps)[-1]
+    key = f"result|{plan.id}|{editor.agent}|{editor.id}".lower()
+    value = _memory.get(key)
+    if value := _memory:
+        return value
+
     if not value:
         raise ValueError("No result found in memory")
-    return value
 
 
 async def save_result(plan: Plan):
+    """
+    Save the result of the plan to a file.
+
+    Args:
+        plan (Plan): The plan object with the steps for the task.
+    """
     path = pathlib.Path(__file__).parent.parent / "results"
     path.mkdir(parents=True, exist_ok=True)
-    file_path = path / f"{plan.id}.md"
+    file_path = path / f"{plan.id}.txt"
     if file_path.exists():
         rich.print(f"File {file_path} already exists. Overwriting...")
 
@@ -110,6 +164,16 @@ async def run_agent(
     env_file: str = ".env",
     revisions: int = 3,
 ) -> str:
+    """
+    Run the agent to perform a task based on user input and context.
+
+    Args:
+        user_input (str): The user input for the task.
+        context_input (str | list | dict | None): The context input for the task.
+        env_file (str): The path to the environment file.
+        revisions (int): The number of revisions to perform if needed.
+    """
+
     load_dotenv(env_file, override=True)
 
     trace_id = gen_trace_id()
