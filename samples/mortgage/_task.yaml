@@ -1,0 +1,22 @@
+goal: |
+    Write a one-page memo presenting the results of the analysis of the
+    mortgage application for a client. Review the letter of employment, 
+    pay stub and credit information. The letter of employment annual salary 
+    and pay stub amount should not have a variance of more than 5%.
+
+    The credit score should not be less than 650. The client can qualify for a 
+    mortgage amount that is 5 times their annual salary. Make sure the client 
+    name matches on all documents and the employer name is the same on the 
+    letter of employment and pay stub.
+
+    Include the expected down payment amount, the mortgage amount, and 
+    any recommendations for the client. Based on the prevailing interest rates 
+    across 5 Canadian banks, calculate the mortgage amount. Use the average 
+    interest rate across the banks to calculate the mortgage amount. The client 
+    should be able to afford the monthly payment amount.
+
+context:
+    - file:///Users/kwesi/Downloads/agent_dag_demo/samples/mortgage/loe_sample.png
+    - file:///Users/kwesi/Downloads/agent_dag_demo/samples/mortgage/ps_sample.png
+    - file:///Users/kwesi/Downloads/agent_dag_demo/samples/mortgage/credit_report.pdf
+    - https://laws-lois.justice.gc.ca/eng/regulations/SOR-2012-281/page-1.html

@@ -1,6 +1,5 @@
 import asyncio
 import json
-import pathlib
 
 import rich
 from dotenv import load_dotenv
@@ -9,7 +8,9 @@ from actors.builder import context_builder
 from actors.manager import TaskManager
 from actors.planner import planner, re_planner
 from agents import Agent, Runner, custom_span, gen_trace_id, trace
+from core.config import RESULTS_STORAGE_PATH
 from core.models import Context, Plan, PlanStep
+from core.utils import load_task_config
 from tools.redis_memory import get_memory
 
 _memory = get_memory()
@@ -41,7 +42,7 @@ async def build_context(
     else:
         raise ValueError("Invalid context input type")
 
-    input = f"{context_input}\n\nUse the given UUID: {plan_id} for the plan id"
+    input = f"{context_input}\n\nThe plan id is `{plan_id}`"
     result = await Runner.run(agent, input=input, max_turns=20)
     context: Context = result.final_output
 
@@ -70,7 +71,7 @@ async def plan_task(plan_id: str, agent: Agent, user_input: str) -> Plan:
     Returns:
         Plan: The generated plan object with the steps for the task.
     """
-    input = f"{user_input}\n\nUse the given UUID: {plan_id} for the plan id"
+    input = f"{user_input}\n\nThe plan id is `{plan_id}`"
     result = await Runner.run(agent, input=input, max_turns=20)
     plan: Plan = result.final_output
 
@@ -129,10 +130,9 @@ async def fetch_output(plan: Plan):
     def fn(x: PlanStep):
         return "editor" in x.agent.lower()
 
-    editor: PlanStep = sorted(fn, plan.steps)[-1]
+    editor: PlanStep = sorted(filter(fn, plan.steps), key=lambda x: x.id)[-1]
     key = f"result|{plan.id}|{editor.agent}|{editor.id}".lower()
-    value = _memory.get(key)
-    if value := _memory:
+    if value := _memory.get(key):
         return value
 
     if not value:
@@ -146,7 +146,7 @@ async def save_result(plan: Plan):
     Args:
         plan (Plan): The plan object with the steps for the task.
     """
-    path = pathlib.Path(__file__).parent.parent / "results"
+    path = RESULTS_STORAGE_PATH
     path.mkdir(parents=True, exist_ok=True)
     file_path = path / f"{plan.id}.txt"
     if file_path.exists():
@@ -196,50 +196,27 @@ async def run_agent(
         await save_result(revised_plan)
 
 
-async def test_research():
-    user_goal = (
-        "Create a one-page executive brief on the economic impact of "
-        "Canada’s 2024-2025 carbon tax changes. Cite at least three sources."
-    )
+async def main(task_config_file: str, env_file: str = ".env"):
+    """
+    Main function to run the agent with the provided task configuration.
 
-    context = {
-        "files_paths_or_urls": [
-            "/Users/kwesi/Downloads/agent_dag_demo/data/samples/us_symbols.csv",
-            "/Users/kwesi/Downloads/agent_dag_demo/data/samples/org_chart.png",
-            "/Users/kwesi/Downloads/agent_dag_demo/data/samples/white_paper.pdf",
-            "http://goldfinger.utias.utoronto.ca/dwz/",
-            "https://www.youtube.com/watch?v=yYALsys-P_w",
-        ]
-    }
-    await run_agent(user_goal, context)
+    Args:
+        task_config_file (str): The path to the task configuration file.
+        env_file (str): The path to the environment file.
+    """
+    config = load_task_config(task_config_file)
+    user_input = config["goal"]
+    context_input = config["context"]
+
+    await run_agent(user_input, context_input, env_file)
+
+
+async def test_research():
+    await main("../samples/generic/_task.yaml", env_file=".env")
 
 
 async def test_mortgage():
-    user_goal = (
-        "Write a one-page memo presenting the results of the analysis of the"
-        "mortgage application for a client. Review the letter of employment, "
-        "pay stub and credit information. The letter of employment annual salary "
-        "and pay stub amount should not have a variance of more than 5%.\n\n"
-        "The credit score should not be less than 650. The client can qualify for a "
-        "mortgage amount that is 5 times their annual salary. Make sure the client "
-        "name matches on all documents and the employer name is the same on the "
-        "letter of employment and pay stub.\n\n"
-        "Include the expected down payment amount, the mortgage amount, and "
-        "any recommendations for the client. Based on the prevailing interest rates "
-        "across 5 Canadian banks, calculate the mortgage amount. Use the average "
-        "interest rate across the banks to calculate the mortgage amount. Use "
-        "The client should be able to afford the monthly payment amount. "
-    )
-
-    context = {
-        "files_paths_or_urls": [
-            "/Users/kwesi/Downloads/agent_dag_demo/data/mortgage/loe_bomb.png",
-            "/Users/kwesi/Downloads/agent_dag_demo/data/mortgage/ps_bomb.png",
-            "/Users/kwesi/Downloads/agent_dag_demo/data/mortgage/credit_report.pdf",
-            "https://laws-lois.justice.gc.ca/eng/regulations/SOR-2012-281/page-1.html",
-        ]
-    }
-    await run_agent(user_goal, context)
+    await main("../samples/mortgage/_task.yaml", env_file=".env")
 
 
 if __name__ == "__main__":

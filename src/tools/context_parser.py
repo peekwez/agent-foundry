@@ -1,6 +1,9 @@
 import hashlib
+import io
 import os
 import pathlib
+import rich
+
 from mimetypes import guess_type
 
 from markitdown import MarkItDown
@@ -8,7 +11,9 @@ from openai import OpenAI
 
 from agents import function_tool
 from core.config import CONTEXT_STORAGE_PATH
+from core.utils import load_file, write_file, URL_SCHEMES
 from core.validate import validate_context_key
+
 
 _parsers: dict[str, MarkItDown] | None = None
 
@@ -76,19 +81,32 @@ def _read_context(key: str) -> str:
     """
 
     _, file_path_or_url = validate_context_key(key)
-    file_prefix = f"{hashlib.md5(key.strip().encode('utf-8')).hexdigest()}.md"
-    file_path: pathlib.Path = CONTEXT_STORAGE_PATH / file_prefix
-    if file_path.exists():
-        with open(file_path) as f:
-            return f.read()
 
+    file_prefix = hashlib.md5(file_path_or_url.strip().encode("utf-8")).hexdigest()
+    file_path: pathlib.Path = CONTEXT_STORAGE_PATH / f"{file_prefix}.md"
+    if file_path.exists():
+        rich.print(
+            f"File or URL data {file_path.resolve().as_uri()} exists. Loading..."
+        )
+        contents = load_file(file_path.resolve().as_uri())
+        return contents.decode("utf-8")
+
+    # For local or remote files, let's load the file
+    media_contents: io.BytesIO | str = file_path_or_url
+    if not (file_path_or_url.startswith(URL_SCHEMES)):
+        # use fsspec to load from any source
+        contents = load_file(file_path_or_url)
+        if contents is None:
+            raise ValueError(f"File not found: {file_path_or_url}")
+        media_contents = io.BytesIO(contents)
+
+    # Get the media type and parse the contents
     media_type = get_media_type(file_path_or_url)
     parser = get_parser(media_type)
-    document = parser.convert(file_path_or_url)
+    document = parser.convert(media_contents)
     contents = document.markdown
 
-    with open(file_path, "w") as f:
-        f.write(contents)
+    write_file(file_path.resolve().as_uri(), contents)
     return contents
 
 
@@ -116,19 +134,19 @@ def read_context(key: str) -> str:
 def test_context_parser():
     import json
     import pathlib
-
     import rich
+    import uuid
 
     cwd = pathlib.Path(__file__).parent
-    with open(cwd.parent.parent / "data/samples/info.json") as f:
+    with open(cwd.parent.parent / "samples/files.json") as f:
         data = json.load(f)
 
-    plan_id = "511f41e962d54268b3915577240c4aec"
+    plan_id = uuid.uuid4().hex
     for file in data["files"]:
         key = f"context|{plan_id.strip()}|{file.strip()}"
         output = _read_context(key)
         rich.print(f"File Path or URL: {file}")
-        rich.print(output[:100])
+        rich.print(output[:50])
         print("\n")
 
 

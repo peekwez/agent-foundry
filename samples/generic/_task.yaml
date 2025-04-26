@@ -1,0 +1,10 @@
+goal: |
+    Create a one-page executive brief on the economic impact of Canada’s
+    2024-2025 carbon tax changes. Cite at least three sources.
+
+context:
+    - file:///Users/kwesi/Downloads/agent_dag_demo/samples/generic/us_symbols.csv
+    - file:///Users/kwesi/Downloads/agent_dag_demo/samples/generic/org_chart.png
+    - file:///Users/kwesi/Downloads/agent_dag_demo/samples/generic/first_then.pdf
+    - http://goldfinger.utias.utoronto.ca/dwz/
+    - https://www.youtube.com/watch?v=yYALsys-P_w

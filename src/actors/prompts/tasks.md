@@ -2,10 +2,9 @@
 
 {instructions}
 
-## Instructions
+## Task Instructions
 
-Below are additional instructions for the agent. The agent will follow these instructions
-to complete its tasks.
+Below are additional task instructions for the agent. The agent will follow these instructions to complete its tasks.
 
 ### Information on Tools
 

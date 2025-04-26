@@ -28,5 +28,7 @@ coverage:
 
 .PHONY: run
 run:
-	uv run src/main.py
+	cd src && uv run -m main
 
+test-context:
+	cd src && uv run -m tools.context_parser

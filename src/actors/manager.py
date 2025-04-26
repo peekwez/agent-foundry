@@ -16,9 +16,9 @@ from tools.redis_memory import get_memory
 def get_agent_info(name, agent: Agent):
     instructions = agent.instructions.split("## Instructions")[0]
     start = instructions.find("\n")
-    line = f"> Agent: {name}\n"
+    line = f"> Agent: {name.strip()}\n"
     line += f"> Agent Instructions: {instructions[start:].strip()}"
-    return f"{5 * '-'}\n{line}\n{5 * '-'}\n"
+    return f"{line}\n---"
 
 
 TASK_AGENTS_REGISTRY: dict[str, Agent] = {
