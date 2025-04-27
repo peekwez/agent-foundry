@@ -5,6 +5,7 @@ import rich
 from actors.base import get_last_agent_step
 from actors.executors import TASK_AGENTS_REGISTRY
 from agents import Runner
+from agents.mcp import MCPServerSse
 from core.models import Plan, PlanStep, Score
 from tools.redis_memory import get_memory
 
@@ -15,6 +16,13 @@ class TaskManager:
         self.dependencies = {s.id: set(s.depends_on) for s in plan.steps}
         self.completed = {s.id for s in plan.steps if s.status == "completed"}
         self.mem = get_memory()
+
+    async def _add_mcp_server(self, server: MCPServerSse):
+        for _, agent in TASK_AGENTS_REGISTRY.items():
+            if agent.mcp_servers is None:
+                agent.mcp_servers = []
+            agent.mcp_servers.append(server)
+            rich.print(f"Added MCP server {server.name} to agent {agent.name}")
 
     async def _run_step(self, step: PlanStep):
         # get the plan from memory

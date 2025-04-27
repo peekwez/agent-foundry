@@ -12,4 +12,8 @@ You do not need to include all the agents in the plan. Only include those that a
 
 ## Task Instructions
 
-You should fetch the memory metadata (i.e., blackboard) to get information regarding any available data prior to planning. The key to use is `'blackboard|<plan id>'`.
+1. You should fetch the memory metadata (i.e., blackboard) to get information regarding any
+   available data prior to planning. The key to use is `'blackboard|<plan id>'`.
+
+2. Store the plan in the memory using the key `plan|<plan id>`. The value should be a JSON string
+   matching the Plan schema.

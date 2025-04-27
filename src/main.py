@@ -6,15 +6,48 @@ from dotenv import load_dotenv
 
 from actors.base import get_last_agent_step
 from actors.builder import context_builder
+from actors.executors import TASK_AGENTS_REGISTRY
 from actors.manager import TaskManager
 from actors.planner import planner, re_planner
 from agents import Agent, Runner, custom_span, gen_trace_id, trace
+from agents.mcp import MCPServerSse
 from core.config import RESULTS_STORAGE_PATH
 from core.models import Context, Plan
 from core.utils import load_task_config
-from tools.redis_memory import get_memory
+from tools.mcp_servers import get_mcp_blackboard_server_params
 
-_memory = get_memory()
+# from tools.mcp_servers import blackboard_server
+
+# _memory = get_memory()
+
+
+async def add_mcp_server(agent: Agent, server: MCPServerSse):
+    """
+    Add a MCP server to the agent.
+
+    Args:
+        agent (Agent): The agent to which the server will be added.
+        server (MCPServerSse): The MCP server to be added.
+    """
+    if not agent.mcp_servers:
+        agent.mcp_servers = []
+    agent.mcp_servers.append(server)
+
+
+async def add_mcp_server_to_all_agents(server: MCPServerSse):
+    """
+    Add a MCP server to all agents in the TASK_AGENTS_REGISTRY.
+
+    Args:
+        server (MCPServerSse): The MCP server to be added.
+    """
+
+    await add_mcp_server(planner, server)
+    await add_mcp_server(re_planner, server)
+    await add_mcp_server(context_builder, server)
+    for _, agent in TASK_AGENTS_REGISTRY.items():
+        await add_mcp_server(agent, server)
+    rich.print("✅ Added Blackboard MCP server to all agents ...")
 
 
 async def build_context(
@@ -47,15 +80,7 @@ async def build_context(
     result = await Runner.run(agent, input=input, max_turns=20)
     context: Context = result.final_output
 
-    blackboard = {}
-    for x in context.contexts:
-        key = f"context|{plan_id}|{x.file_path_or_url}"
-        blackboard.update({key: x.description})
-
-    key = f"blackboard|{plan_id}".lower()
-    _memory.hset(key, mapping=blackboard)
     size = len(context.contexts)
-
     rich.print(f"✅ Context for {size} items built successfully ...")
     return context
 
@@ -76,10 +101,7 @@ async def plan_task(plan_id: str, agent: Agent, user_input: str) -> Plan:
     result = await Runner.run(agent, input=input, max_turns=20)
     plan: Plan = result.final_output
 
-    key = f"plan|{plan_id}".lower()
-    _memory.set(key, value=plan.model_dump_json())
     size = len(plan.steps)
-
     if agent.name == "Planner":
         rich.print(f"✅ Planning for task completed with {size} steps ...")
     elif agent.name == "Re-Planner":
@@ -114,12 +136,13 @@ async def execute_plan(plan_id: str, plan: Plan, revisions: int = 3) -> Plan:
     return revised_plan
 
 
-async def fetch_output(plan: Plan):
+async def fetch_output(plan: Plan, server: MCPServerSse) -> str:
     """
     Fetch the output from the last editor step in the plan.
 
     Args:
         plan (Plan): The plan object with the steps for the task.
+        server (MCPServerSse): The MCP server to fetch the output from.
 
     Returns:
         str: The output from the last editor step in the plan.
@@ -130,19 +153,19 @@ async def fetch_output(plan: Plan):
 
     step = get_last_agent_step("Editor", plan.steps)
     key = f"result|{plan.id}|{step.agent}|{step.id}".lower()
-    if value := _memory.get(key):
-        return value
-
+    output = await server.call_tool(tool_name="read_memory", arguments={"key": key})
+    value = output["text"]
     if not value:
         raise ValueError("No result found in memory")
 
 
-async def save_result(plan: Plan):
+async def save_result(plan: Plan, server: MCPServerSse):
     """
     Save the result of the plan to a file.
 
     Args:
         plan (Plan): The plan object with the steps for the task.
+        server (MCPServerSse): The MCP server to fetch the output from.
     """
     path = RESULTS_STORAGE_PATH
     path.mkdir(parents=True, exist_ok=True)
@@ -150,7 +173,7 @@ async def save_result(plan: Plan):
     if file_path.exists():
         rich.print(f"File {file_path} already exists. Overwriting...")
 
-    result = await fetch_output(plan)
+    result = await fetch_output(plan, server)
     with open(file_path, "w", encoding="utf-8") as f:
         f.write(result)
     rich.print(f"Result saved to results/{plan.id}.md")
@@ -176,22 +199,31 @@ async def run_agent(
 
     trace_id = gen_trace_id()
     guid = trace_id.split("_")[-1]
+    server_params = get_mcp_blackboard_server_params()
 
-    with trace(
-        workflow_name=f"DAG Writer Agent: {guid.upper()[:8]}", trace_id=trace_id
-    ):
-        # Build context
-        if context_input:
-            await build_context(guid, context_builder, context_input)
+    async with MCPServerSse(
+        params=server_params,
+        cache_tools_list=True,
+        name="MCP Blackboard Server",
+    ) as server:
+        # Add the MCP server to all agents
+        await add_mcp_server_to_all_agents(server)
 
-        # Plan the task
-        plan = await plan_task(guid, planner, user_input)
+        with trace(
+            workflow_name=f"DAG Writer Agent: {guid.upper()[:8]}", trace_id=trace_id
+        ):
+            # Build context
+            if context_input:
+                await build_context(guid, context_builder, context_input)
 
-        # Execute the plan, replan if needed and revise output
-        revised_plan = await execute_plan(guid, plan, revisions)
+            # Plan the task
+            plan = await plan_task(guid, planner, user_input)
 
-        # Save the result to a file
-        await save_result(revised_plan)
+            # Execute the plan, replan if needed and revise output
+            revised_plan = await execute_plan(guid, plan, revisions)
+
+            # Save the result to a file
+            await save_result(revised_plan, server)
 
 
 async def main(task_config_file: str, env_file: str = ".env"):
@@ -205,7 +237,6 @@ async def main(task_config_file: str, env_file: str = ".env"):
     config = load_task_config(task_config_file)
     user_input = config["goal"]
     context_input = config["context"]
-
     await run_agent(user_input, context_input, env_file)
 
 
@@ -219,4 +250,4 @@ async def test_mortgage():
 
 if __name__ == "__main__":
     asyncio.run(test_mortgage())
-    # asyncio.run(test_research())
+# asyncio.run(test_research())

@@ -131,8 +131,6 @@ def test_context_parser():
     import pathlib
     import uuid
 
-    import rich
-
     cwd = pathlib.Path(__file__).parent
     with open(cwd.parent.parent / "samples/files.json") as f:
         data = json.load(f)

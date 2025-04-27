@@ -1,13 +1,16 @@
 import pathlib
 
 from agents import Agent, ModelSettings
+
+# from agents.mcp import MCPServerStdio
 from core.config import OPENAI_MODEL
 from core.models import PlanStep
-from tools.context_parser import read_context
-from tools.redis_memory import read_memory, write_memory
+
+# from tools.context_parser import read_context
+# from tools.redis_memory import read_memory, write_memory
 
 PROMPTS_HOME = pathlib.Path(__file__).parent / "prompts"
-TASK_AGENTS_TOOLS = [read_memory, write_memory, read_context]
+# TASK_AGENTS_TOOLS = [read_memory, write_memory, read_context]
 TASK_AGENTS_EXTRA_PROMPT = open(PROMPTS_HOME / "tasks.md").read()
 
 
@@ -32,14 +35,14 @@ def build_agent(
     """
     tools = extra_tools or []
     model_settings: ModelSettings = kwargs.pop("model_settings", ModelSettings())
+    model_settings.tool_choice = "required"
 
     if task_agent:
-        tools += TASK_AGENTS_TOOLS
         instructions = TASK_AGENTS_EXTRA_PROMPT.format(
             name=f"{name} Agent", instructions=instructions
         )
-        model_settings.tool_choice = "required"
 
+    # server.connect()
     return Agent(
         name=name,
         model=kwargs.pop("model", OPENAI_MODEL),

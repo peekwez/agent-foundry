@@ -14,7 +14,11 @@ You do not need to include all the agents in the plan. Only include those that a
 
 ## Task Instructions
 
-1. You must fetch the existing plan from memory using the to know what steps are available and what dependencies exist. The key to use is `'plan|<plan id>'`.
+1. You must fetch the existing plan from memory using the to know what steps are available and
+   what dependencies exist. The key to use is `'plan|<plan id>'`.
 
 2. You must fetch the memory metadata (i.e., blackboard) value to get information regarding
    available data to help with the re-planning if they are relevant, and the key to use is `'blackboard|<plan id>'`
+
+3. Store the updated plan in the memory using the key `plan|<plan id>`. The value should be a
+   JSON string matching the Plan schema.

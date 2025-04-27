@@ -28,7 +28,7 @@ coverage:
 
 .PHONY: run
 run:
-	cd src && run run -m main
+	cd src && uv run -m main
 
 test-context:
 	cd src && uv run -m tools.context_parser
