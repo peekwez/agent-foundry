@@ -2,18 +2,16 @@ import hashlib
 import io
 import os
 import pathlib
-import rich
-
 from mimetypes import guess_type
 
+import rich
 from markitdown import MarkItDown
 from openai import OpenAI
 
 from agents import function_tool
 from core.config import CONTEXT_STORAGE_PATH
-from core.utils import load_file, write_file, URL_SCHEMES
+from core.utils import URL_SCHEMES, load_file, write_file
 from core.validate import validate_context_key
-
 
 _parsers: dict[str, MarkItDown] | None = None
 
@@ -71,7 +69,7 @@ def _read_context(key: str) -> str:
 
     Args:
         key (str): The context key to read the data from. The key should
-            be in the format "context|{plan_id}|{file_path_or_url}".
+            be in the format "context|<plan_id>|<file_path_or_url>".
 
     Returns:
         str: The contents of the context data.
@@ -85,9 +83,6 @@ def _read_context(key: str) -> str:
     file_prefix = hashlib.md5(file_path_or_url.strip().encode("utf-8")).hexdigest()
     file_path: pathlib.Path = CONTEXT_STORAGE_PATH / f"{file_prefix}.md"
     if file_path.exists():
-        rich.print(
-            f"File or URL data {file_path.resolve().as_uri()} exists. Loading..."
-        )
         contents = load_file(file_path.resolve().as_uri())
         return contents.decode("utf-8")
 
@@ -134,8 +129,9 @@ def read_context(key: str) -> str:
 def test_context_parser():
     import json
     import pathlib
-    import rich
     import uuid
+
+    import rich
 
     cwd = pathlib.Path(__file__).parent
     with open(cwd.parent.parent / "samples/files.json") as f:

@@ -9,11 +9,14 @@ goal: |
     name matches on all documents and the employer name is the same on the 
     letter of employment and pay stub.
 
-    Include the expected down payment amount, the mortgage amount, and 
-    any recommendations for the client. Based on the prevailing interest rates 
+    Include the expected down payment amount (i.e., 5-20 %), the mortgage amount, 
+    and any recommendations for the client. Based on the prevailing interest rates 
     across 5 Canadian banks, calculate the mortgage amount. Use the average 
     interest rate across the banks to calculate the mortgage amount. The client 
     should be able to afford the monthly payment amount.
+
+    First time home buyers can qualify for a 5% down payment. If the mortgage 
+    amount is $1,000,000 or more, the client must have a 20% down payment.
 
 context:
     - file:///Users/kwesi/Downloads/agent_dag_demo/samples/mortgage/loe_sample.png

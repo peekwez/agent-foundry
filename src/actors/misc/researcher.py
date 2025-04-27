@@ -1,12 +1,10 @@
 from actors.base import build_agent
+from actors.constants import RESEARCHER_INSTRUCTIONS
 from agents import WebSearchTool
 
 researcher = build_agent(
     name="Researcher",
-    instructions=(
-        "You search the web or fetch any relevant data from context "
-        "and synthesize concise notes."
-    ),
+    instructions=RESEARCHER_INSTRUCTIONS,
     extra_tools=[WebSearchTool()],
     task_agent=True,
     model="gpt-4o",

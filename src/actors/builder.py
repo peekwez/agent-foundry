@@ -7,9 +7,13 @@ context_builder = build_agent(
     instructions=(
         "You build descriptions for the context items available for completing a task. "
         "Given a list of file paths or URLs you create a concise description of the "
-        "context item based on the task to be completed."
+        "contents of item based on the task to be completed. You must fetch the "
+        "contents of the context items using the `read_context` tool to generate the "
+        "descriptions. You should not include irrelevant information or details that "
+        "are not necessary for completing the task. The key for the context item is "
+        "of the form `context|<plan_id>|<file_path_or_url>`."
     ),
-    model="o3",
+    model="gpt-4o",
     output_type=Context,
     extra_tools=[read_context],
 )

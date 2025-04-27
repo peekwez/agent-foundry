@@ -98,8 +98,7 @@ def validate_plan_key(key: str) -> tuple[str, None, None]:
         uuid.UUID(plan_id)
     except ValueError:
         message = (
-            "Plan ID must be a valid UUID. Key must be in the format "
-            "'plan|<plan_id>'"
+            "Plan ID must be a valid UUID. Key must be in the format 'plan|<plan_id>'"
         )
         raise ValueError(message) from None
 

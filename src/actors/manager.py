@@ -2,37 +2,11 @@ import asyncio
 
 import rich
 
-from actors.analyzer import analyzer
-from actors.editor import editor
-from actors.evaluator import evaluator
-from actors.extractor import extractor
-from actors.researcher import researcher
-from actors.writer import writer
-from agents import Agent, Runner
+from actors.base import get_last_agent_step
+from actors.executors import TASK_AGENTS_REGISTRY
+from agents import Runner
 from core.models import Plan, PlanStep, Score
 from tools.redis_memory import get_memory
-
-
-def get_agent_info(name, agent: Agent):
-    instructions = agent.instructions.split("## Instructions")[0]
-    start = instructions.find("\n")
-    line = f"> Agent: {name.strip()}\n"
-    line += f"> Agent Instructions: {instructions[start:].strip()}"
-    return f"{line}\n---"
-
-
-TASK_AGENTS_REGISTRY: dict[str, Agent] = {
-    "Researcher": researcher,
-    "Extractor": extractor,
-    "Analyzer": analyzer,
-    "Writer": writer,
-    "Editor": editor,
-    "Evaluator": evaluator,
-}
-
-TASK_AGENTS_LIST: str = "\n".join(
-    [get_agent_info(name, agent) for name, agent in TASK_AGENTS_REGISTRY.items()]
-)
 
 
 class TaskManager:
@@ -71,14 +45,9 @@ class TaskManager:
         key = f"plan|{self.plan.id}"
         data = self.mem.get(key)
         plan = Plan.model_validate_json(data)
-        eval: PlanStep = sorted(
-            filter(
-                lambda x: x.agent.lower().find("evaluator") > -1,
-                plan.steps,
-            )
-        ).pop()
+        step: PlanStep = get_last_agent_step(agent_name="Evaluator", steps=plan.steps)
 
-        key = f"result|{self.plan.id}|{eval.agent}|{eval.id}".lower()
+        key = f"result|{self.plan.id}|{step.agent}|{step.id}".lower()
         value = self.mem.get(key)
 
         if not value:

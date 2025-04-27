@@ -4,12 +4,13 @@ import json
 import rich
 from dotenv import load_dotenv
 
+from actors.base import get_last_agent_step
 from actors.builder import context_builder
 from actors.manager import TaskManager
 from actors.planner import planner, re_planner
 from agents import Agent, Runner, custom_span, gen_trace_id, trace
 from core.config import RESULTS_STORAGE_PATH
-from core.models import Context, Plan, PlanStep
+from core.models import Context, Plan
 from core.utils import load_task_config
 from tools.redis_memory import get_memory
 
@@ -42,7 +43,7 @@ async def build_context(
     else:
         raise ValueError("Invalid context input type")
 
-    input = f"{context_input}\n\nThe plan id is `{plan_id}`"
+    input = f"{context_input}\n\nUse the UUID: {plan_id} as the plan id."
     result = await Runner.run(agent, input=input, max_turns=20)
     context: Context = result.final_output
 
@@ -51,7 +52,7 @@ async def build_context(
         key = f"context|{plan_id}|{x.file_path_or_url}"
         blackboard.update({key: x.description})
 
-    key = f"blackboard|{plan_id}"
+    key = f"blackboard|{plan_id}".lower()
     _memory.hset(key, mapping=blackboard)
     size = len(context.contexts)
 
@@ -71,11 +72,11 @@ async def plan_task(plan_id: str, agent: Agent, user_input: str) -> Plan:
     Returns:
         Plan: The generated plan object with the steps for the task.
     """
-    input = f"{user_input}\n\nThe plan id is `{plan_id}`"
+    input = f"{user_input}\n\nUse the UUID: {plan_id} as the plan id."
     result = await Runner.run(agent, input=input, max_turns=20)
     plan: Plan = result.final_output
 
-    key = f"plan|{plan_id}"
+    key = f"plan|{plan_id}".lower()
     _memory.set(key, value=plan.model_dump_json())
     size = len(plan.steps)
 
@@ -127,11 +128,8 @@ async def fetch_output(plan: Plan):
         ValueError: If no result is found in memory.
     """
 
-    def fn(x: PlanStep):
-        return "editor" in x.agent.lower()
-
-    editor: PlanStep = sorted(filter(fn, plan.steps), key=lambda x: x.id)[-1]
-    key = f"result|{plan.id}|{editor.agent}|{editor.id}".lower()
+    step = get_last_agent_step("Editor", plan.steps)
+    key = f"result|{plan.id}|{step.agent}|{step.id}".lower()
     if value := _memory.get(key):
         return value
 
