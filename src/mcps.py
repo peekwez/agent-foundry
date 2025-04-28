@@ -11,7 +11,7 @@ def get_mcp_blackboard_server_params() -> MCPServerSseParams:
         MCPServerSseParams: The parameters for the MCP server.
     """
     return MCPServerSseParams(
-        url=os.getenv("MCP_BLACKBOARD_SERVER", "localhost:8000/sse"),
+        url=os.getenv("MCP_BLACKBOARD_SERVER", "http://localhost:8000/sse"),
         headers=None,
         timeout=180,
         sse_read_timeout=180,

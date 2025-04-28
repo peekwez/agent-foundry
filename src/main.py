@@ -14,11 +14,7 @@ from agents.mcp import MCPServerSse
 from core.config import RESULTS_STORAGE_PATH
 from core.models import Context, Plan
 from core.utils import load_task_config
-from tools.mcp_servers import get_mcp_blackboard_server_params
-
-# from tools.mcp_servers import blackboard_server
-
-# _memory = get_memory()
+from mcps import get_mcp_blackboard_server_params
 
 
 async def add_mcp_server(agent: Agent, server: MCPServerSse):
@@ -110,7 +106,9 @@ async def plan_task(plan_id: str, agent: Agent, user_input: str) -> Plan:
     return plan
 
 
-async def execute_plan(plan_id: str, plan: Plan, revisions: int = 3) -> Plan:
+async def execute_plan(
+    plan_id: str, plan: Plan, revisions: int = 3, server: MCPServerSse | None = None
+) -> Plan:
     """
     Execute the plan using the task manager and replan if needed.
 
@@ -118,6 +116,8 @@ async def execute_plan(plan_id: str, plan: Plan, revisions: int = 3) -> Plan:
         plan_id (str): The unique identifier for the plan.
         plan (Plan): The plan object with the steps for the task.
         revisions (int): The number of revisions to perform if needed.
+        server (MCPServerSse | None): The MCP server to fetch the output from.
+            Defaults to None.
 
     Returns:
         Plan: The revised plan object after executing the task.
@@ -128,7 +128,7 @@ async def execute_plan(plan_id: str, plan: Plan, revisions: int = 3) -> Plan:
         name = f"Plan Executor - Rev {rev}"
         data = {"Revision": rev, "Plan ID": plan_id}
         with custom_span(name=name, data=data):
-            tasks = TaskManager(revised_plan)
+            tasks = TaskManager(revised_plan, server=server)
             score = await tasks.run()
             if score.score == "pass":
                 break
@@ -153,8 +153,8 @@ async def fetch_output(plan: Plan, server: MCPServerSse) -> str:
 
     step = get_last_agent_step("Editor", plan.steps)
     key = f"result|{plan.id}|{step.agent}|{step.id}".lower()
-    output = await server.call_tool(tool_name="read_memory", arguments={"key": key})
-    value = output["text"]
+    data = await server.call_tool(tool_name="read_memory", arguments={"key": key})
+    value = data.content[0].text
     if not value:
         raise ValueError("No result found in memory")
 
@@ -220,7 +220,7 @@ async def run_agent(
             plan = await plan_task(guid, planner, user_input)
 
             # Execute the plan, replan if needed and revise output
-            revised_plan = await execute_plan(guid, plan, revisions)
+            revised_plan = await execute_plan(guid, plan, revisions, server)
 
             # Save the result to a file
             await save_result(revised_plan, server)

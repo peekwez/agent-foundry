@@ -1,4 +1,3 @@
-import fsspec
 import yaml
 
 FILE_SCHEMES = (
@@ -57,30 +56,3 @@ def load_task_config(file_path: str) -> dict:
             )
 
     return config
-
-
-def load_file(file_path: str) -> str:
-    """
-    Load the content of a file.
-
-    Args:
-        file_path (str): The path to the file.
-
-    Returns:
-        str: The content of the file.
-    """
-    if file_path.startswith(FILE_SCHEMES):
-        with fsspec.open(file_path, "rb", encoding="utf-8") as f:
-            return f.read()
-
-
-def write_file(file_path: str, content: str) -> None:
-    """
-    Write content to a file.
-
-    Args:
-        file_path (str): The path to the file.
-        content (str): The content to write to the file.
-    """
-    with fsspec.open(file_path, "w", encoding="utf-8") as f:
-        f.write(content)

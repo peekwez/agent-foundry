@@ -7,28 +7,33 @@ from actors.executors import TASK_AGENTS_REGISTRY
 from agents import Runner
 from agents.mcp import MCPServerSse
 from core.models import Plan, PlanStep, Score
-from tools.redis_memory import get_memory
 
 
 class TaskManager:
-    def __init__(self, plan: Plan):
+    def __init__(self, plan: Plan, server: MCPServerSse):
         self.plan = plan
+        self.server = server
         self.dependencies = {s.id: set(s.depends_on) for s in plan.steps}
         self.completed = {s.id for s in plan.steps if s.status == "completed"}
-        self.mem = get_memory()
 
-    async def _add_mcp_server(self, server: MCPServerSse):
-        for _, agent in TASK_AGENTS_REGISTRY.items():
-            if agent.mcp_servers is None:
-                agent.mcp_servers = []
-            agent.mcp_servers.append(server)
-            rich.print(f"Added MCP server {server.name} to agent {agent.name}")
+    async def _get_plan(self) -> Plan:
+        # get the plan from memory
+        key = f"plan|{self.plan.id}"
+        data = await self.server.call_tool("read_memory", arguments={"key": key})
+        plan = Plan.model_validate_json(data.content[0].text)
+        return plan
+
+    async def _update_plan(self, plan: Plan):
+        # update the plan in memory
+        key = f"plan|{self.plan.id}"
+        await self.server.call_tool(
+            "write_memory",
+            arguments={"key": key, "description": "", "value": plan.model_dump_json()},
+        )
 
     async def _run_step(self, step: PlanStep):
         # get the plan from memory
-        key = f"plan|{self.plan.id}"
-        data = self.mem.get(key)
-        plan = Plan.model_validate_json(data)
+        plan = await self._get_plan()
 
         # run the step
         message = (
@@ -40,7 +45,7 @@ class TaskManager:
 
         # update the plan in memory
         plan.steps[step.id - 1].status = "completed"
-        self.mem.set(key, value=plan.model_dump_json())
+        await self._update_plan(plan)
 
         # update the completed steps
         self.completed.add(step.id)
@@ -50,13 +55,14 @@ class TaskManager:
     async def _get_score(self):
         # After all steps are done get the evaluation scores
         # and update the plan status if needed
-        key = f"plan|{self.plan.id}"
-        data = self.mem.get(key)
-        plan = Plan.model_validate_json(data)
+        plan = await self._get_plan()
         step: PlanStep = get_last_agent_step(agent_name="Evaluator", steps=plan.steps)
 
         key = f"result|{self.plan.id}|{step.agent}|{step.id}".lower()
-        value = self.mem.get(key)
+        data = await self.server.call_tool(
+            tool_name="read_memory", arguments={"key": key}
+        )
+        value = data.content[0].text
 
         if not value:
             raise ValueError("No evaluation scores exists")
