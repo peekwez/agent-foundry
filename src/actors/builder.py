@@ -1,8 +1,6 @@
 from actors.base import build_agent
 from core.models import Context
 
-# from tools.context_parser import read_context
-
 context_builder = build_agent(
     name="Context Builder",
     instructions=(

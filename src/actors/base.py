@@ -2,15 +2,10 @@ import pathlib
 
 from agents import Agent, ModelSettings
 
-# from agents.mcp import MCPServerStdio
 from core.config import OPENAI_MODEL
 from core.models import PlanStep
 
-# from tools.context_parser import read_context
-# from tools.redis_memory import read_memory, write_memory
-
 PROMPTS_HOME = pathlib.Path(__file__).parent / "prompts"
-# TASK_AGENTS_TOOLS = [read_memory, write_memory, read_context]
 TASK_AGENTS_EXTRA_PROMPT = open(PROMPTS_HOME / "tasks.md").read()
 
 
