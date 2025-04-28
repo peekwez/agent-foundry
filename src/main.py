@@ -154,9 +154,11 @@ async def fetch_output(plan: Plan, server: MCPServerSse) -> str:
     step = get_last_agent_step("Editor", plan.steps)
     key = f"result|{plan.id}|{step.agent}|{step.id}".lower()
     data = await server.call_tool(tool_name="read_memory", arguments={"key": key})
+    breakpoint()
     value = data.content[0].text
     if not value:
         raise ValueError("No result found in memory")
+    return value
 
 
 async def save_result(plan: Plan, server: MCPServerSse):
@@ -174,6 +176,7 @@ async def save_result(plan: Plan, server: MCPServerSse):
         rich.print(f"File {file_path} already exists. Overwriting...")
 
     result = await fetch_output(plan, server)
+    breakpoint()
     with open(file_path, "w", encoding="utf-8") as f:
         f.write(result)
     rich.print(f"Result saved to results/{plan.id}.md")
