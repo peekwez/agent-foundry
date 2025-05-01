@@ -162,16 +162,16 @@ async def save_result(plan: Plan, server: MCPServerSse):
         plan (Plan): The plan object with the steps for the task.
         server (MCPServerSse): The MCP server to fetch the output from.
     """
-    path = RESULTS_STORAGE_PATH
-    path.mkdir(parents=True, exist_ok=True)
-    file_path = path / f"{plan.id}.txt"
+
+    RESULTS_STORAGE_PATH.mkdir(parents=True, exist_ok=True)
+    file_path = RESULTS_STORAGE_PATH / f"{plan.id}.txt"
     if file_path.exists():
         log_info(f"File {file_path} already exists. Overwriting...")
 
     result = await fetch_output(plan, server)
     with open(file_path, "w", encoding="utf-8") as f:
         f.write(result)
-    log_done(f"Result saved to {file_path}.md")
+    log_done(f"Result saved to {file_path}")
 
 
 async def run_agent(
