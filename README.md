@@ -56,9 +56,7 @@ src/
 
 ## 🏃 Usage Example
 
-The system is driven by a **goal** and a list of **context artifacts**.  
-At runtime these are published to the _mcp‑blackboard_ server, which every actor can query
-for memory & context. Set the server URL via env var **`MCP_BLACKBOARD_SERVER`** (defaults to `http://localhost:8000/sse`).
+The system is driven by a **goal** and a list of **context artifacts**. At runtime these are published to the [_mcp‑blackboard_](https://github.com/peekwez/mcp-blackboard/tree/main) server, which every actor can query for memory & context. Set the server URL via env var **`MCP_BLACKBOARD_SERVER`** (defaults to `http://localhost:8000/sse`).
 
 ### Example goal
 
