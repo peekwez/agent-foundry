@@ -1,4 +1,5 @@
 import yaml
+from rich.console import Console
 
 FILE_SCHEMES = (
     "file://",
@@ -23,6 +24,8 @@ URL_SCHEMES = (
 
 
 SCHEMES = FILE_SCHEMES + URL_SCHEMES
+
+console = Console()
 
 
 def load_task_config(file_path: str) -> dict:
@@ -56,3 +59,23 @@ def load_task_config(file_path: str) -> dict:
             )
 
     return config
+
+
+def log_info(message: str):
+    """
+    Log a message to the console.
+
+    Args:
+        message (str): The message to log.
+    """
+    console.print({message})
+
+
+def log_done(message: str):
+    """
+    Load a completion message to the console.
+
+    Args:
+        message (str): The message to log.
+    """
+    console.print(f"[green]✔[/green] {message}")

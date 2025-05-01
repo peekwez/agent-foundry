@@ -1,6 +1,5 @@
 import json
 
-import rich
 from agents import Agent, Runner, custom_span, gen_trace_id, trace
 from agents.mcp import MCPServerSse
 from dotenv import load_dotenv
@@ -12,7 +11,7 @@ from actors.manager import TaskManager
 from actors.planner import planner, re_planner
 from core.config import RESULTS_STORAGE_PATH
 from core.models import Context, Plan
-from core.utils import load_task_config
+from core.utils import load_task_config, log_done, log_info
 from mcps import get_mcp_blackboard_server_params, get_result
 
 
@@ -42,7 +41,7 @@ async def add_mcp_server_to_all_agents(server: MCPServerSse):
     await add_mcp_server(context_builder, server)
     for _, agent in TASK_AGENTS_REGISTRY.items():
         await add_mcp_server(agent, server)
-    rich.print("✅ Agents updated with MCP server for blackboard...")
+    log_done("Agents updated with MCP server for blackboard...")
 
 
 async def build_context(
@@ -76,7 +75,7 @@ async def build_context(
     context: Context = result.final_output
 
     size = len(context.contexts)
-    rich.print(f"✅ Context initialized with {size} items...")
+    log_done(f"Context created with {size} items...")
     return context
 
 
@@ -98,10 +97,10 @@ async def plan_task(plan_id: str, agent: Agent, user_input: str) -> Plan:
 
     size = len(plan.steps)
     if agent.name == "Planner":
-        rich.print(f"✔ Task plan created with {size} steps...")
+        log_done(f"Task plan created with {size} steps...")
     elif agent.name == "Re-Planner":
         new_size = len([s for s in plan.steps if s.status == "pending"])
-        rich.print(f"✔ Task re-planning added {new_size} new steps...")
+        log_done(f"Task re-planning created with {new_size} steps...")
     return plan
 
 
@@ -167,12 +166,12 @@ async def save_result(plan: Plan, server: MCPServerSse):
     path.mkdir(parents=True, exist_ok=True)
     file_path = path / f"{plan.id}.txt"
     if file_path.exists():
-        rich.print(f"File {file_path} already exists. Overwriting...")
+        log_info(f"File {file_path} already exists. Overwriting...")
 
     result = await fetch_output(plan, server)
     with open(file_path, "w", encoding="utf-8") as f:
         f.write(result)
-    rich.print(f"Result saved to results/{plan.id}.md")
+    log_done(f"Result saved to {file_path}.md")
 
 
 async def run_agent(
@@ -206,7 +205,7 @@ async def run_agent(
         await add_mcp_server_to_all_agents(server)
 
         with trace(
-            workflow_name=f"DAG Writer Agent: {guid.upper()[:8]}", trace_id=trace_id
+            workflow_name=f"Knowledge Worker: {guid.upper()[:8]}", trace_id=trace_id
         ):
             # Build context
             if context_input:
@@ -235,11 +234,4 @@ async def run(task_config_file: str, env_file: str = ".env", revisions: int = 3)
     user_input = config["goal"]
     context_input = config["context"]
     await run_agent(user_input, context_input, env_file, revisions)
-
-
-async def test_research():
-    await run("../samples/generic/_task.yaml", env_file=".env")
-
-
-async def test_mortgage():
-    await run("../samples/mortgage/_task.yaml", env_file=".env")
+    log_done("Task completed successfully.")
