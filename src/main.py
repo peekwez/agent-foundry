@@ -1,4 +1,3 @@
-import asyncio
 import json
 
 import rich
@@ -14,7 +13,7 @@ from actors.planner import planner, re_planner
 from core.config import RESULTS_STORAGE_PATH
 from core.models import Context, Plan
 from core.utils import load_task_config
-from mcps import get_mcp_blackboard_server_params
+from mcps import get_mcp_blackboard_server_params, get_result
 
 
 async def add_mcp_server(agent: Agent, server: MCPServerSse):
@@ -43,7 +42,7 @@ async def add_mcp_server_to_all_agents(server: MCPServerSse):
     await add_mcp_server(context_builder, server)
     for _, agent in TASK_AGENTS_REGISTRY.items():
         await add_mcp_server(agent, server)
-    rich.print("✅ Added Blackboard MCP server to all agents ...")
+    rich.print("✅ Agents updated with MCP server for blackboard...")
 
 
 async def build_context(
@@ -77,7 +76,7 @@ async def build_context(
     context: Context = result.final_output
 
     size = len(context.contexts)
-    rich.print(f"✅ Context for {size} items built successfully ...")
+    rich.print(f"✅ Context initialized with {size} items...")
     return context
 
 
@@ -99,10 +98,10 @@ async def plan_task(plan_id: str, agent: Agent, user_input: str) -> Plan:
 
     size = len(plan.steps)
     if agent.name == "Planner":
-        rich.print(f"✅ Planning for task completed with {size} steps ...")
+        rich.print(f"✔ Task plan created with {size} steps...")
     elif agent.name == "Re-Planner":
         new_size = len([s for s in plan.steps if s.status == "pending"])
-        rich.print(f" ✅ Re-planning for task completed with {new_size} new steps ...")
+        rich.print(f"✔ Task re-planning added {new_size} new steps...")
     return plan
 
 
@@ -132,7 +131,7 @@ async def execute_plan(
             score = await tasks.run()
             if score.score == "pass":
                 break
-        revised_plan = plan_task(plan_id, re_planner, input)
+        revised_plan = await plan_task(plan_id, re_planner, input)
     return revised_plan
 
 
@@ -152,11 +151,7 @@ async def fetch_output(plan: Plan, server: MCPServerSse) -> str:
     """
 
     step = get_last_agent_step("Editor", plan.steps)
-    key = f"result|{plan.id}|{step.agent}|{step.id}".lower()
-    data = await server.call_tool(tool_name="read_memory", arguments={"key": key})
-    value = data.content[0].text
-    if not value:
-        raise ValueError("No result found in memory")
+    value = await get_result(plan.id, str(step.id), step.agent, server)
     return value
 
 
@@ -227,18 +222,19 @@ async def run_agent(
             await save_result(revised_plan, server)
 
 
-async def run(task_config_file: str, env_file: str = ".env"):
+async def run(task_config_file: str, env_file: str = ".env", revisions: int = 3):
     """
     Main function to run the agent with the provided task configuration.
 
     Args:
         task_config_file (str): The path to the task configuration file.
         env_file (str): The path to the environment file.
+        revisions (int): The number of revisions to perform if needed.
     """
     config = load_task_config(task_config_file)
     user_input = config["goal"]
     context_input = config["context"]
-    await run_agent(user_input, context_input, env_file)
+    await run_agent(user_input, context_input, env_file, revisions)
 
 
 async def test_research():
@@ -247,8 +243,3 @@ async def test_research():
 
 async def test_mortgage():
     await run("../samples/mortgage/_task.yaml", env_file=".env")
-
-
-if __name__ == "__main__":
-    asyncio.run(test_mortgage())
-# asyncio.run(test_research())

@@ -1,6 +1,8 @@
+import asyncio
+
 import click
 
-from main import run, test_mortgage, test_research
+from main import run
 
 
 @click.group()
@@ -16,7 +18,7 @@ def cli():
     "-c",
     "--task-config-file",
     type=click.Path(exists=True),
-    default="../samples/mortgage/_task.yaml",
+    required=True,
     help="Path to the task configuration file.",
 )
 @click.option(
@@ -30,7 +32,7 @@ def cli():
     "-r",
     "--revisions",
     type=int,
-    default=0,
+    default=3,
     help="Number of revisions to perform if needed.",
 )
 def run_task(task_config_file, env_file, revisions):
@@ -42,7 +44,7 @@ def run_task(task_config_file, env_file, revisions):
         env_file (str): The path to the environment file.
         revisions (int): The number of revisions to perform if needed.
     """
-    run(task_config_file, env_file, revisions)
+    asyncio.run(run(task_config_file, env_file, revisions))
 
 
 @cli.command()
@@ -53,14 +55,26 @@ def run_task(task_config_file, env_file, revisions):
     required=True,
     help="Specify the test to run: 'mortgage' or 'research'.",
 )
-def test_task(option):
+@click.option(
+    "-e",
+    "--env-file",
+    type=click.Path(exists=True),
+    default="../.env",
+    help="Path to the environment file.",
+)
+def test_task(option, env_file):
     """
     Run the specified test task.
 
     Args:
         option (str): The test to run ('mortgage' or 'research').
+        env_file (str): The path to the environment file.
     """
-    if option == "mortgage":
-        test_mortgage()
-    elif option == "research":
-        test_research()
+    from pathlib import Path
+
+    task_config_file = Path(__file__).parent.parent / f"samples/{option}/_task.yaml"
+    asyncio.run(run(task_config_file, env_file=".env", revisions=3))
+
+
+if __name__ == "__main__":
+    cli()

@@ -17,6 +17,7 @@ EVALUATOR_INSTRUCTIONS = (
     "explaining the reasoning behind the score. "
 )
 
+
 TASK_AGENTS_INSTRUCTIONS = {
     "Researcher": RESEARCHER_INSTRUCTIONS,
     "Extractor": EXTRACTOR_INSTRUCTIONS,

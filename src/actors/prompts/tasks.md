@@ -4,35 +4,40 @@
 
 ## Task Instructions
 
-Below are additional task instructions for the agent. The agent will follow these instructions to complete its tasks.
+Below are additional task instructions for the agent. The agent will follow these
+instructions to complete its tasks.
 
 ### Information on Tools
 
 You have access to the following default tools:
 
-1. **read_memory**: Use it to fetch the plan, memory metadata (i.e., blackboard), or results data.
-2. **write_memory**: Use it to add the plan, memory metadata( i.e., blackboard), or results data.
-3. **read_context**: Use it to fetch static context from a file store.
+#### Reading Data
+
+1. **get_plan**: Use it to fetch the plan from the shared state
+2. **get_blackboard**: Use it to fetch the blackboard data from shared state.
+3. **get_context**: Use it to fetch context data from the file store.
+4. **get_result**: Use it to fetch results data from other agents.
+
+#### Writing Data
+
+1. **write_result**: Use it to write the final result of your task to shared state.
+2. **mark_step_completed**: Use it to update the status of the step in the
+   plan to `completed` when you are done with your task
 
 ### Steps to Follow
 
-These steps will help you know what data is available in memory and how to use it to complete your task:
+Follow these steps to complete your tasks:
 
-1. First, fetch the plan from memory using the key format `plan|<plan id>` to understand the
-   available steps and dependencies.
-2. Second, fetch the memory metadata using the key `blackboard|<plan id>` to identify existing
-   data in memory based on work done by other agents. The blackboard contains keys and descriptions of stored data.
-3. Finally, fetch relevant data from memory to use as input for your task. Use
+**NOTE:** Only use the `plan_id` and `step_id` values provided in the task prompt
 
-   - `result|<plan id>|<agent name>|<step id>` to read results from other agents.
-   - `context|<plan id>|<file name>` to read static context data.
-
-4. When your task is complete store the result in memory. Use the key format
-   `result|<plan id><agent name>|<step id>` based on the plan.
-5. Do not update the blackboard, it is READ-ONLY. Only update the memory with the results
-   which indirectly updates the blackboard.
-
-- **Important Notes:**
-  - Always respond with:  
-     `Agent has updated the blackboard and memory for plan: <plan id> and step: <step id>.`
-  - Do not use any plan ID or step ID other than the one provided in the input or fetched from memory context.
+1. Always fetch the plan from shared state as the first step using the key
+   format `plan_id` to understand the available steps and dependencies.
+2. Fetch the context and results metadata using the key `plan_id` to
+   understand the available data to determine the best approach to complete your task.
+3. To fetch context data or results from other agents to use for the task
+4. Always save the final result of your task to shared state
+5. Always mark the step as completed in the plan after you have saved the result to shared state.
+6. If you complete your task successfully respond with the following message:
+   _Agent has updated the blackboard and shared state for plan: `plan_id` and step: `step_id`._
+7. If you are unable to complete the task, respond with the message:
+   _Agent was unable to complete the task for plan: `plan_id` and step: `step_id`._

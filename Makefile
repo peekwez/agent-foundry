@@ -1,4 +1,4 @@
-OPTIONS := mortgage
+OPTION := mortgage
 TASK_FILE := src/samples/mortgage/_task.yaml
 ENV_FILE := src/.env 
 REVISIONS := 3
