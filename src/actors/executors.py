@@ -1,6 +1,7 @@
+from agents import Agent, WebSearchTool
+
 from actors.base import build_agent
 from actors.constants import TASK_AGENTS_INSTRUCTIONS
-from agents import Agent, WebSearchTool
 from core.models import Score
 
 

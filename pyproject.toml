@@ -3,6 +3,7 @@ name = "agent-foundry"
 version = "0.1.0"
 requires-python = ">=3.13"
 dependencies = [
+    "click>=8.1.8",
     "openai-agents>=0.0.12",
     "pydantic>=2.11.3",
     "python-dotenv>=1.1.0",
@@ -31,7 +32,6 @@ lint.select = [
     "C4", # flake8-comprehensions
     "UP", # pyupgrade,
 ]
-lint.isort = { combine-as-imports = true, known-first-party = ["agents"] }
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
@@ -45,9 +45,6 @@ disallow_incomplete_defs = false
 disallow_untyped_defs = false
 disallow_untyped_calls = false
 
-# [[tool.mypy.overrides]]
-# module = "sounddevice.*"
-# ignore_missing_imports = true
 
 [tool.coverage.run]
 source = ["tests", "src"]

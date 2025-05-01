@@ -1,34 +1,40 @@
-.PHONY: sync
+OPTIONS := mortgage
+TASK_FILE := src/samples/mortgage/_task.yaml
+ENV_FILE := src/.env 
+REVISIONS := 3
+
+.PHONY: sync run format mypy tests coverage lint all
+
 sync:
 	uv sync --all-extras --all-packages --group dev
 
-.PHONY: format
 format: 
 	uv run ruff format
 	uv run ruff check --fix
 
-.PHONY: lint
 lint: 
 	uv run ruff check
 
-.PHONY: mypy
 mypy: 
 	uv run mypy .
 
-.PHONY: tests
 tests: 
 	uv run pytest 
 
-.PHONY: coverage
 coverage:
-	
 	uv run coverage run -m pytest
 	uv run coverage xml -o coverage.xml
 	uv run coverage report -m --fail-under=95
 
-.PHONY: run
-run:
-	cd src && uv run -m main
+test-run:
+	cd src && uv run -m \
+		cmd test-task -o ${OPTION}
 
-test-context:
-	cd src && uv run -m tools.context_parser
+task-run:
+	cd src && uv run -m \
+		cmd run-task \
+		-c ${TASK_FILE} \
+		-e ${ENV_FILE} \
+		-r ${REVISIONS}
+
+

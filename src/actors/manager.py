@@ -1,11 +1,11 @@
 import asyncio
 
 import rich
+from agents import Runner
+from agents.mcp import MCPServerSse
 
 from actors.base import get_last_agent_step
 from actors.executors import TASK_AGENTS_REGISTRY
-from agents import Runner
-from agents.mcp import MCPServerSse
 from core.models import Plan, PlanStep, Score
 
 

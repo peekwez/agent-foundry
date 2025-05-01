@@ -2,6 +2,8 @@ import asyncio
 import json
 
 import rich
+from agents import Agent, Runner, custom_span, gen_trace_id, trace
+from agents.mcp import MCPServerSse
 from dotenv import load_dotenv
 
 from actors.base import get_last_agent_step
@@ -9,8 +11,6 @@ from actors.builder import context_builder
 from actors.executors import TASK_AGENTS_REGISTRY
 from actors.manager import TaskManager
 from actors.planner import planner, re_planner
-from agents import Agent, Runner, custom_span, gen_trace_id, trace
-from agents.mcp import MCPServerSse
 from core.config import RESULTS_STORAGE_PATH
 from core.models import Context, Plan
 from core.utils import load_task_config
@@ -227,7 +227,7 @@ async def run_agent(
             await save_result(revised_plan, server)
 
 
-async def main(task_config_file: str, env_file: str = ".env"):
+async def run(task_config_file: str, env_file: str = ".env"):
     """
     Main function to run the agent with the provided task configuration.
 
@@ -242,11 +242,11 @@ async def main(task_config_file: str, env_file: str = ".env"):
 
 
 async def test_research():
-    await main("../samples/generic/_task.yaml", env_file=".env")
+    await run("../samples/generic/_task.yaml", env_file=".env")
 
 
 async def test_mortgage():
-    await main("../samples/mortgage/_task.yaml", env_file=".env")
+    await run("../samples/mortgage/_task.yaml", env_file=".env")
 
 
 if __name__ == "__main__":
