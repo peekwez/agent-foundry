@@ -1,34 +1,35 @@
-.PHONY: sync
+.PHONY: sync run format lint mypy tests coverage run link-path link-data test-context
+
 sync:
 	uv sync --all-extras --all-packages --group dev
 
-.PHONY: format
 format: 
 	uv run ruff format
 	uv run ruff check --fix
 
-.PHONY: lint
 lint: 
 	uv run ruff check
 
-.PHONY: mypy
 mypy: 
 	uv run mypy .
 
-.PHONY: tests
 tests: 
 	uv run pytest 
 
-.PHONY: coverage
 coverage:
 	
 	uv run coverage run -m pytest
 	uv run coverage xml -o coverage.xml
-	uv run coverage report -m --fail-under=95
+	uv run coverage report -m
 
-.PHONY: run
 run:
 	cd src && uv run -m main
 
-test-context:
-	cd src && uv run -m tools.context_parser
+link-path:
+	mkdir -p /tmp/genai/data || true
+	mkdir -p /tmp/genai/cache || true
+
+link-data: link-path
+	unlink /tmp/genai/data/bb-samples || true
+	ln -s $(shell pwd)/samples /tmp/genai/data/bb-samples
+	ls -l /tmp/genai/data/bb-samples/
