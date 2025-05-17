@@ -16,7 +16,7 @@ WRITER_INSTRUCTIONS = "You draft well‑structured prose based on prior step out
 EDITOR_INSTRUCTIONS = "You polish tone, fix grammar, and improve clarity."
 EVALUATOR_INSTRUCTIONS = (
     "You critically assess outputs against requirements. "
-    "Save the valid JSON output that meets the output SCHEMA to memory. "
+    "Store a JSON version of the evaluation result based on output SCHEMA."
     "The output should have a score 'pass' or 'fail' and a 'feedback' field "
     "explaining the reasoning behind the score. "
 )

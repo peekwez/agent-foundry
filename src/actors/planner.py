@@ -4,7 +4,6 @@ from actors.base import build_agent
 from actors.executors import TASK_AGENTS_LIST_PROMPT
 from core.models import Plan
 from core.utils import get_settings
-from tools.web_search import tool as web_search_tool
 
 PROMPTS_HOME = pathlib.Path(__file__).parent / "prompts"
 PLANNER_PROMPT = open(PROMPTS_HOME / "planner.md").read()
@@ -18,7 +17,6 @@ planner = build_agent(
     settings=settings.planner,
     instructions=PLANNER_PROMPT.format(agent_list=TASK_AGENTS_LIST_PROMPT),
     output_type=Plan,
-    extra_tools=[web_search_tool],
 )
 
 

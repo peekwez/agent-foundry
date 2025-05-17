@@ -158,7 +158,12 @@ async def run_web_search(ctx: RunContextWrapper[Any], args: str) -> str:
     Returns:
         str: The result of the web search.
     """
-    parsed = WebSearchArguments.model_validate(args)
+    if isinstance(args, str):
+        parsed = WebSearchArguments.model_validate_json(args)
+    elif isinstance(args, dict):
+        parsed = WebSearchArguments.model_validate(args)
+    else:
+        raise ValueError("Invalid argument type for web search")
     return search_web(parsed.query, parsed.num_results)
 
 

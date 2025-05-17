@@ -25,12 +25,14 @@ class TaskManager:
         )
         agent = TASK_AGENTS_REGISTRY[step.agent]
         input = f"{step.prompt} \n The plan id is '{self.plan.id}'"
-        await Runner.run(agent, input=input, max_turns=60)
+        result = await Runner.run(agent, input=input, max_turns=60)
 
         # update the completed steps
         self.plan.steps[step.id - 1].status = "completed"
         self.completed.add(step.id)
         log_done(message)
+        if agent.name == "Evaluator":
+            print(result.final_output)
         return step.id
 
     async def _get_score(self):
