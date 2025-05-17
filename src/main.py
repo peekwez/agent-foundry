@@ -1,7 +1,7 @@
-import asyncio
 import json
 
-import rich
+from agents import Agent, Runner, custom_span, gen_trace_id, trace
+from agents.mcp import MCPServerSse
 from dotenv import load_dotenv
 
 from actors.base import get_last_agent_step
@@ -9,12 +9,10 @@ from actors.builder import context_builder
 from actors.executors import TASK_AGENTS_REGISTRY
 from actors.manager import TaskManager
 from actors.planner import planner, re_planner
-from agents import Agent, Runner, custom_span, gen_trace_id, trace
-from agents.mcp import MCPServerSse
 from core.config import RESULTS_STORAGE_PATH
 from core.models import Context, Plan
-from core.utils import load_task_config
-from mcps import get_mcp_blackboard_server_params
+from core.utils import load_task_config, log_done, log_info
+from mcps import get_mcp_blackboard_server_params, get_result
 
 
 async def add_mcp_server(agent: Agent, server: MCPServerSse):
@@ -43,7 +41,7 @@ async def add_mcp_server_to_all_agents(server: MCPServerSse):
     await add_mcp_server(context_builder, server)
     for _, agent in TASK_AGENTS_REGISTRY.items():
         await add_mcp_server(agent, server)
-    rich.print("✅ Added Blackboard MCP server to all agents ...")
+    log_done("Agents updated with MCP server for blackboard...")
 
 
 async def build_context(
@@ -77,7 +75,7 @@ async def build_context(
     context: Context = result.final_output
 
     size = len(context.contexts)
-    rich.print(f"✅ Context for {size} items built successfully ...")
+    log_done(f"Context created with {size} items...")
     return context
 
 
@@ -99,10 +97,10 @@ async def plan_task(plan_id: str, agent: Agent, user_input: str) -> Plan:
 
     size = len(plan.steps)
     if agent.name == "Planner":
-        rich.print(f"✅ Planning for task completed with {size} steps ...")
+        log_done(f"Task plan created with {size} steps...")
     elif agent.name == "Re-Planner":
         new_size = len([s for s in plan.steps if s.status == "pending"])
-        rich.print(f" ✅ Re-planning for task completed with {new_size} new steps ...")
+        log_done(f"Task re-planning created with {new_size} steps...")
     return plan
 
 
@@ -132,7 +130,7 @@ async def execute_plan(
             score = await tasks.run()
             if score.score == "pass":
                 break
-        revised_plan = plan_task(plan_id, re_planner, input)
+        revised_plan = await plan_task(plan_id, re_planner, input)
     return revised_plan
 
 
@@ -152,11 +150,7 @@ async def fetch_output(plan: Plan, server: MCPServerSse) -> str:
     """
 
     step = get_last_agent_step("Editor", plan.steps)
-    key = f"result|{plan.id}|{step.agent}|{step.id}".lower()
-    data = await server.call_tool(tool_name="read_memory", arguments={"key": key})
-    value = data.content[0].text
-    if not value:
-        raise ValueError("No result found in memory")
+    value = await get_result(plan.id, str(step.id), step.agent, server)
     return value
 
 
@@ -168,16 +162,16 @@ async def save_result(plan: Plan, server: MCPServerSse):
         plan (Plan): The plan object with the steps for the task.
         server (MCPServerSse): The MCP server to fetch the output from.
     """
-    path = RESULTS_STORAGE_PATH
-    path.mkdir(parents=True, exist_ok=True)
-    file_path = path / f"{plan.id}.txt"
+
+    RESULTS_STORAGE_PATH.mkdir(parents=True, exist_ok=True)
+    file_path = RESULTS_STORAGE_PATH / f"{plan.id}.txt"
     if file_path.exists():
-        rich.print(f"File {file_path} already exists. Overwriting...")
+        log_info(f"File {file_path} already exists. Overwriting...")
 
     result = await fetch_output(plan, server)
     with open(file_path, "w", encoding="utf-8") as f:
         f.write(result)
-    rich.print(f"Result saved to results/{plan.id}.md")
+    log_done(f"Result saved to {file_path}")
 
 
 async def run_agent(
@@ -211,7 +205,7 @@ async def run_agent(
         await add_mcp_server_to_all_agents(server)
 
         with trace(
-            workflow_name=f"DAG Writer Agent: {guid.upper()[:8]}", trace_id=trace_id
+            workflow_name=f"Knowledge Worker: {guid.upper()[:8]}", trace_id=trace_id
         ):
             # Build context
             if context_input:
@@ -227,28 +221,17 @@ async def run_agent(
             await save_result(revised_plan, server)
 
 
-async def main(task_config_file: str, env_file: str = ".env"):
+async def run(task_config_file: str, env_file: str = ".env", revisions: int = 3):
     """
     Main function to run the agent with the provided task configuration.
 
     Args:
         task_config_file (str): The path to the task configuration file.
         env_file (str): The path to the environment file.
+        revisions (int): The number of revisions to perform if needed.
     """
     config = load_task_config(task_config_file)
     user_input = config["goal"]
     context_input = config["context"]
-    await run_agent(user_input, context_input, env_file)
-
-
-async def test_research():
-    await main("../samples/generic/_task.yaml", env_file=".env")
-
-
-async def test_mortgage():
-    await main("../samples/mortgage/_task.yaml", env_file=".env")
-
-
-if __name__ == "__main__":
-    asyncio.run(test_mortgage())
-# asyncio.run(test_research())
+    await run_agent(user_input, context_input, env_file, revisions)
+    log_done("Task completed successfully.")

@@ -1,6 +1,7 @@
 import pathlib
 
 from agents import Agent, ModelSettings
+
 from core.config import OPENAI_MODEL
 from core.models import PlanStep
 

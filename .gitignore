@@ -145,3 +145,5 @@ cython_debug/
 data
 results
 tmp
+src.zip
+Archive.zip
