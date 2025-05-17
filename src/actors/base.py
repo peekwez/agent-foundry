@@ -1,21 +1,20 @@
 import pathlib
+from typing import Any
 
-from agents import Agent, ModelSettings
+from agents import Agent
 
-from core.config import OPENAI_MODEL
-from core.models import PlanStep
+from core.models import AgentSettings, PlanStep
 
 PROMPTS_HOME = pathlib.Path(__file__).parent / "prompts"
 TASK_AGENTS_EXTRA_PROMPT = open(PROMPTS_HOME / "tasks.md").read()
 
 
 def build_agent(
-    name: str,
+    settings: AgentSettings,
     instructions: str,
-    extra_tools: list | None = None,
-    task_agent: bool = False,
-    **kwargs,
-):
+    extra_tools: list[Any] | None = None,
+    **kwargs: Any,
+) -> Agent:
     """
     Build an agent with the given name and instructions.
 
@@ -28,23 +27,23 @@ def build_agent(
             Defaults to False.
         **kwargs: Additional keyword arguments.
     """
-    tools = extra_tools or []
-    model_settings: ModelSettings = kwargs.pop("model_settings", ModelSettings())
-    model_settings.tool_choice = "required"
 
-    if task_agent:
-        instructions = TASK_AGENTS_EXTRA_PROMPT.format(
-            name=f"{name} Agent", instructions=instructions
+    tools = extra_tools or []
+    settings.model_settings.tool_choice = "required"
+
+    full_instructions = instructions
+    if settings.is_task_agent:
+        full_instructions = TASK_AGENTS_EXTRA_PROMPT.format(
+            name=f"{settings.name} Agent", instructions=instructions
         )
 
-    # server.connect()
     return Agent(
-        name=name,
-        model=kwargs.pop("model", OPENAI_MODEL),
-        instructions=instructions,
+        name=settings.name,
+        model=settings.model,
+        instructions=full_instructions,
         tools=tools,
         tool_use_behavior="run_llm_again",
-        model_settings=model_settings,
+        model_settings=settings.model_settings,
         **kwargs,
     )
 

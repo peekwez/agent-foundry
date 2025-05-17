@@ -1,0 +1,41 @@
+{
+  // VS Code Tasks for common Makefile targets and scripts
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "sync",
+      "type": "shell",
+      "command": "uv sync --all-extras --all-packages --group dev"
+    },
+    {
+      "label": "format",
+      "type": "shell",
+      "command": "uv run ruff format && uv run ruff check --fix"
+    },
+    {
+      "label": "lint",
+      "type": "shell",
+      "command": "uv run ruff check"
+    },
+    {
+      "label": "mypy",
+      "type": "shell",
+      "command": "uv run mypy ."
+    },
+    {
+      "label": "tests",
+      "type": "shell",
+      "command": "uv run pytest"
+    },
+    {
+      "label": "coverage",
+      "type": "shell",
+      "command": "uv run coverage run -m pytest && uv run coverage xml -o coverage.xml && uv run coverage report -m --fail-under=95"
+    },
+    {
+      "label": "debug",
+      "type": "shell",
+      "command": "cd src && uv run -m main"
+    }
+  ]
+}

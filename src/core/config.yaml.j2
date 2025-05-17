@@ -1,0 +1,62 @@
+provider:
+  api_key: {{ env.MODEL_API_KEY }}
+  base_url: {{ env.MODEL_BASE_URL | default('https://api.openai.com') }}
+
+context_builder:
+    name: 'Context Builder'
+    model: {{ env.CONTEXT_BUILDER_MODEL | default('vertex_ai.anthropic.claude-3-7-sonnet') }}
+    is_task_agent: false
+    model_settings:
+        temperature: {{ env.CONTEXT_BUILDER_MODEL_SETTINGS_TEMPERATURE | default(0) }}
+        max_tokens: {{ env.CONTEXT_BUILDER_MODEL_SETTINGS_MAX_TOKENS | default(8192) }}
+
+
+planner:
+    name: 'Planner'
+    model: {{ env.PLANNER_MODEL | default('openai.o3-mini-2025-01-31') }}
+    is_task_agent: false
+    model_settings:
+        temperature: {{ env.PLANNER_MODEL_SETTINGS_TEMPERATURE | default(0) }}
+        max_tokens: {{ env.PLANNER_MODEL_SETTINGS_MAX_TOKENS | default(5000) }}
+
+researcher:
+    name: 'Researcher'
+    model: {{ env.RESEARCHER_MODEL | default('openai.o3-2025-04-16') }}
+    model_settings:
+        temperature: {{ env.RESEARCHER_MODEL_SETTINGS_TEMPERATURE | default(0.3) }}
+        max_tokens: {{ env.RESEARCHER_MODEL_SETTINGS_MAX_TOKENS | default(10000) }}
+
+extractor:
+    name: 'Extractor'
+    model: {{ env.EXTRACTOR_MODEL | default('openai.gpt-4.1-2025-04-14') }}
+    model_settings:
+        temperature: {{ env.EXTRACTOR_MODEL_SETTINGS_TEMPERATURE | default(0) }}
+        max_tokens: {{ env.EXTRACTOR_MODEL_SETTINGS_MAX_TOKENS | default(32768) }}
+
+analyzer:
+    name: 'Analyzer'
+    model: {{ env.ANALYZER_MODEL | default('openai.o3-2025-04-16') }}
+    model_settings:
+        temperature: {{ env.ANALYZER_MODEL_SETTINGS_TEMPERATURE | default(0) }}
+        max_tokens: {{ env.ANALYZER_MODEL_SETTINGS_MAX_TOKENS | default(5000) }}
+
+writer:
+    name: 'Writer'
+    model: {{ env.WRITER_MODEL | default('openai.o3-2025-04-16') }}
+    model_settings:
+        temperature: {{ env.WRITER_MODEL_SETTINGS_TEMPERATURE | default(0.3) }}
+        max_tokens: {{ env.WRITER_MODEL_SETTINGS_MAX_TOKENS | default(10000) }}
+
+editor:
+    name: 'Editor'
+    model: {{ env.EDITOR_MODEL | default('openai.o3-2025-04-16') }}
+    model_settings:
+        temperature: {{ env.EDITOR_MODEL_SETTINGS_TEMPERATURE | default(0.3) }}
+        max_tokens: {{ env.EDITOR_MODEL_SETTINGS_MAX_TOKENS | default(10000) }}
+
+evaluator:
+    name: 'Evaluator'
+    model: {{ env.EVALUATOR_MODEL | default('azure.anthropic.claude-3-5-sonnet-v2') }}
+    model_settings:
+        temperature: {{ env.EVALUATOR_MODEL_SETTINGS_TEMPERATURE | default(0.2) }}
+        max_tokens: {{ env.EVALUATOR_MODEL_SETTINGS_MAX_TOKENS | default(8192) }}

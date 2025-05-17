@@ -1,3 +1,7 @@
+from pathlib import Path
+
+RESULTS_STORAGE_PATH = Path(__file__).parents[2] / "tmp/results"
+
 RESEARCHER_INSTRUCTIONS = (
     "You search the web or fetch any relevant data from context "
     "and synthesize concise notes."

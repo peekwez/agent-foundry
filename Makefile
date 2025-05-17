@@ -1,13 +1,9 @@
-<<<<<<< HEAD
-.PHONY: sync run format lint mypy tests coverage run link-path link-data test-context
-=======
 OPTION := mortgage
 TASK_FILE := src/samples/mortgage/_task.yaml
 ENV_FILE := src/.env 
 REVISIONS := 3
 
-.PHONY: sync run format mypy tests coverage lint all
->>>>>>> origin/main
+.PHONY: sync run format lint mypy tests coverage run link-path link-data test-context
 
 sync:
 	uv sync --all-extras --all-packages --group dev
@@ -34,13 +30,18 @@ run:
 	cd src && uv run -m main
 
 link-path:
-	mkdir -p /tmp/genai/data || true
+	mkdir -p /tmp/genai/data/mcp-tests || true
 	mkdir -p /tmp/genai/cache || true
 
 link-data: link-path
-	unlink /tmp/genai/data/bb-samples || true
-	ln -s $(shell pwd)/samples /tmp/genai/data/bb-samples
-	ls -l /tmp/genai/data/bb-samples/
+	unlink /tmp/genai/data/mcp-tests/mortgage || true
+	ln -s $(shell pwd)/samples/mortgage /tmp/genai/data/mcp-tests/mortgage
+
+	unlink /tmp/genai/data/mcp-tests/research || true
+	ln -s $(shell pwd)/samples/research /tmp/genai/data/mcp-tests/research
+
+	ls -l /tmp/genai/data/mcp-tests
+
 test-run:
 	cd src && uv run -m \
 		cmd test-task -o ${OPTION}
@@ -52,4 +53,5 @@ task-run:
 		-e ${ENV_FILE} \
 		-r ${REVISIONS}
 
-
+install-playwright:
+	npm install -g playwright

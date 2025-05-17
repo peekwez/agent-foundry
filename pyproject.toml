@@ -4,10 +4,12 @@ version = "0.1.0"
 requires-python = ">=3.13"
 dependencies = [
     "click>=8.1.8",
-    "openai-agents>=0.0.12",
+    "jinja2>=3.1.6",
+    "openai-agents[litellm]>=0.0.12",
     "pydantic>=2.11.3",
     "python-dotenv>=1.1.0",
     "pyyaml>=6.0.2",
+    "tavily-python>=0.7.2",
 ]
 
 [dependency-groups]
@@ -46,6 +48,7 @@ warn_unused_ignores = false
 disallow_incomplete_defs = false
 disallow_untyped_defs = false
 disallow_untyped_calls = false
+mypy_path = "src"
 
 
 [tool.coverage.run]

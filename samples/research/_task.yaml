@@ -3,8 +3,8 @@ goal: |
     2024-2025 carbon tax changes. Cite at least three sources.
 
 context:
-    - abfs://mcp-tests/generic/us_symbols.csv
-    - abfs://mcp-tests/generic/org_chart.png
-    - abfs://mcp-tests/generic/first_then.pdf
+    - file:///tmp/genai/data/mcp-tests/research/us_symbols.csv
+    - file:///tmp/genai/data/mcp-tests/research/org_chart.png
+    - file:///tmp/genai/data/mcp-tests/research/first_then.pdf
     - http://goldfinger.utias.utoronto.ca/dwz/
     - https://www.youtube.com/watch?v=yYALsys-P_w

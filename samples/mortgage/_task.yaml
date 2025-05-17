@@ -19,7 +19,7 @@ goal: |
     amount is $1,000,000 or more, the client must have a 20% down payment.
 
 context:
-    - abfs://mcp-tests/mortgage/loe_sample.png
-    - abfs://mcp-tests/mortgage/ps_sample.png
-    - abfs://mcp-tests/mortgage/credit_report.pdf
+    - file:///tmp/genai/data/mcp-tests/mortgage/loe_sample.png
+    - file:///tmp/genai/data/mcp-tests/mortgage/ps_sample.png
+    - file:///tmp/genai/data/mcp-tests/mortgage/credit_report.pdf
     - https://laws-lois.justice.gc.ca/eng/regulations/SOR-2012-281/page-1.html

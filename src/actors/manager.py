@@ -40,10 +40,14 @@ class TaskManager:
             agent_name="Evaluator", steps=self.plan.steps
         )
         data = await get_result(self.plan.id, str(step.id), step.agent, self.server)
+        score = None
         if isinstance(data, str):
             score = Score.model_validate_json(data)
         elif isinstance(data, dict):
             score = Score.model_validate(data)
+
+        if score is None:
+            raise ValueError("No score found in memory")
         return score
 
     async def run(self):

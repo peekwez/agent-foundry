@@ -1,8 +1,8 @@
 from agents import Agent, WebSearchTool
 
 from actors.base import build_agent
-from actors.constants import TASK_AGENTS_INSTRUCTIONS
-from core.models import Score
+from core.constants import TASK_AGENTS_INSTRUCTIONS
+from core.utils import get_settings
 
 
 def get_info(name: str, instructions: str) -> str:
@@ -22,49 +22,37 @@ def get_info(name: str, instructions: str) -> str:
     )
 
 
+settings = get_settings()
 researcher = build_agent(
-    name="Researcher",
-    instructions=TASK_AGENTS_INSTRUCTIONS["Researcher"],
+    settings=settings.researcher,
+    instructions=TASK_AGENTS_INSTRUCTIONS[settings.researcher.name],
     extra_tools=[WebSearchTool()],
-    task_agent=True,
-    model="gpt-4o",
 )
 
 
 extractor = build_agent(
-    name="Extractor",
-    instructions=TASK_AGENTS_INSTRUCTIONS["Extractor"],
-    model="o3",
-    task_agent=True,
+    settings=settings.extractor,
+    instructions=TASK_AGENTS_INSTRUCTIONS[settings.extractor.name],
 )
 
 analyzer = build_agent(
-    name="Analyzer",
-    instructions=TASK_AGENTS_INSTRUCTIONS["Analyzer"],
-    model="o3",
-    task_agent=True,
+    settings=settings.analyzer,
+    instructions=TASK_AGENTS_INSTRUCTIONS[settings.analyzer.name],
 )
 
 writer = build_agent(
-    name="Writer",
-    instructions=TASK_AGENTS_INSTRUCTIONS["Writer"],
-    task_agent=True,
-    model="o3",
+    settings=settings.writer,
+    instructions=TASK_AGENTS_INSTRUCTIONS[settings.writer.name],
 )
 
 editor = build_agent(
-    name="Editor",
-    instructions=TASK_AGENTS_INSTRUCTIONS["Editor"],
-    model="o3",
-    task_agent=True,
+    settings=settings.editor,
+    instructions=TASK_AGENTS_INSTRUCTIONS[settings.editor.name],
 )
 
 evaluator = build_agent(
-    name="Evaluator",
-    instructions=TASK_AGENTS_INSTRUCTIONS["Evaluator"],
-    model="o3",
-    task_agent=True,
-    output_type=Score,
+    settings=settings.evaluator,
+    instructions=TASK_AGENTS_INSTRUCTIONS[settings.evaluator.name],
 )
 
 TASK_AGENTS_REGISTRY: dict[str, Agent] = {

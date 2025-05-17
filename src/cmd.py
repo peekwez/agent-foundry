@@ -2,8 +2,6 @@ import asyncio
 
 import click
 
-from main import run
-
 
 @click.group()
 def cli():
@@ -35,7 +33,7 @@ def cli():
     default=3,
     help="Number of revisions to perform if needed.",
 )
-def run_task(task_config_file, env_file, revisions):
+def run_task(task_config_file: str, env_file: str, revisions: int):
     """
     Run the agent with the provided task configuration.
 
@@ -44,7 +42,12 @@ def run_task(task_config_file, env_file, revisions):
         env_file (str): The path to the environment file.
         revisions (int): The number of revisions to perform if needed.
     """
-    asyncio.run(run(task_config_file, env_file, revisions))
+    from core.utils import load_settings
+
+    load_settings(env_file)
+    from main import run
+
+    asyncio.run(run(task_config_file, revisions))
 
 
 @cli.command()
@@ -62,7 +65,7 @@ def run_task(task_config_file, env_file, revisions):
     default="../.env",
     help="Path to the environment file.",
 )
-def test_task(option, env_file):
+def test_task(option: str, env_file: str):
     """
     Run the specified test task.
 
@@ -72,8 +75,13 @@ def test_task(option, env_file):
     """
     from pathlib import Path
 
+    from core.utils import load_settings
+
+    load_settings(env_file)
+    from main import run
+
     task_config_file = Path(__file__).parent.parent / f"samples/{option}/_task.yaml"
-    asyncio.run(run(task_config_file, env_file=".env", revisions=3))
+    asyncio.run(run(task_config_file.as_posix(), revisions=3))
 
 
 if __name__ == "__main__":

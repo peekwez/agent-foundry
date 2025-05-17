@@ -1,5 +1,6 @@
 from actors.base import build_agent
 from core.models import Context
+from core.utils import get_settings
 
 instructions = """
 You create descriptions for the context items available for completing
@@ -20,9 +21,9 @@ You must store the description for each item using the using the
 `save_context_description` tool.
 """
 
+settings = get_settings()
 context_builder = build_agent(
-    name="Context Builder",
+    settings=settings.context_builder,
     instructions=instructions,
-    model="gpt-4o",
     output_type=Context,
 )

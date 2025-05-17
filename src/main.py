@@ -1,8 +1,8 @@
 import json
+from typing import Any
 
-from agents import Agent, Runner, custom_span, gen_trace_id, trace
+from agents import Agent, Runner, custom_span, gen_trace_id, set_tracing_disabled, trace
 from agents.mcp import MCPServerSse
-from dotenv import load_dotenv
 
 from actors.base import get_last_agent_step
 from actors.builder import context_builder
@@ -45,7 +45,7 @@ async def add_mcp_server_to_all_agents(server: MCPServerSse):
 
 
 async def build_context(
-    plan_id: str, agent: Agent, context_input: str | list | dict
+    plan_id: str, agent: Agent, context_input: str | list[str] | dict[str, str]
 ) -> Context:
     """
     Build context for the task using the context builder agent.
@@ -65,7 +65,7 @@ async def build_context(
         context_input = context_input.strip()
     elif isinstance(context_input, dict):
         context_input = json.dumps(context_input, indent=2)
-    elif isinstance(context_input, list):
+    elif isinstance(context_input, list):  # type: ignore
         context_input = "\n".join(context_input)
     else:
         raise ValueError("Invalid context input type")
@@ -105,32 +105,36 @@ async def plan_task(plan_id: str, agent: Agent, user_input: str) -> Plan:
 
 
 async def execute_plan(
-    plan_id: str, plan: Plan, revisions: int = 3, server: MCPServerSse | None = None
+    plan_id: str, plan: Plan, server: MCPServerSse, revisions: int = 3
 ) -> Plan:
     """
     Execute the plan using the task manager and replan if needed.
+    If the score is not "pass", it will replan the task and execute it again.
+    The number of revisions is limited by the `revisions` parameter.
 
     Args:
         plan_id (str): The unique identifier for the plan.
         plan (Plan): The plan object with the steps for the task.
+        server (MCPServerSse): The MCP server to fetch the output from.
         revisions (int): The number of revisions to perform if needed.
-        server (MCPServerSse | None): The MCP server to fetch the output from.
-            Defaults to None.
+        defaults to 3.
+
 
     Returns:
         Plan: The revised plan object after executing the task.
     """
 
     revised_plan = plan
+    user_input = plan.goal
     for rev in range(1, revisions + 1):
         name = f"Plan Executor - Rev {rev}"
-        data = {"Revision": rev, "Plan ID": plan_id}
+        data: dict[str, Any] = {"Revision": rev, "Plan ID": plan_id}
         with custom_span(name=name, data=data):
             tasks = TaskManager(revised_plan, server=server)
             score = await tasks.run()
             if score.score == "pass":
                 break
-        revised_plan = await plan_task(plan_id, re_planner, input)
+        revised_plan = await plan_task(plan_id, re_planner, user_input)
     return revised_plan
 
 
@@ -151,7 +155,7 @@ async def fetch_output(plan: Plan, server: MCPServerSse) -> str:
 
     step = get_last_agent_step("Editor", plan.steps)
     value = await get_result(plan.id, str(step.id), step.agent, server)
-    return value
+    return value if isinstance(value, str) else json.dumps(value, indent=2)
 
 
 async def save_result(plan: Plan, server: MCPServerSse):
@@ -176,21 +180,19 @@ async def save_result(plan: Plan, server: MCPServerSse):
 
 async def run_agent(
     user_input: str,
-    context_input: str | list | dict | None,
-    env_file: str = ".env",
+    context_input: str | list[str] | dict[str, str] | None,
     revisions: int = 3,
-) -> str:
+) -> None:
     """
     Run the agent to perform a task based on user input and context.
 
     Args:
         user_input (str): The user input for the task.
         context_input (str | list | dict | None): The context input for the task.
-        env_file (str): The path to the environment file.
         revisions (int): The number of revisions to perform if needed.
     """
 
-    load_dotenv(env_file, override=True)
+    set_tracing_disabled(True)
 
     trace_id = gen_trace_id()
     guid = trace_id.split("_")[-1]
@@ -215,23 +217,22 @@ async def run_agent(
             plan = await plan_task(guid, planner, user_input)
 
             # Execute the plan, replan if needed and revise output
-            revised_plan = await execute_plan(guid, plan, revisions, server)
+            revised_plan = await execute_plan(guid, plan, server, revisions)
 
             # Save the result to a file
             await save_result(revised_plan, server)
 
 
-async def run(task_config_file: str, env_file: str = ".env", revisions: int = 3):
+async def run(task_config_file: str, revisions: int = 3):
     """
     Main function to run the agent with the provided task configuration.
 
     Args:
         task_config_file (str): The path to the task configuration file.
-        env_file (str): The path to the environment file.
         revisions (int): The number of revisions to perform if needed.
     """
     config = load_task_config(task_config_file)
     user_input = config["goal"]
     context_input = config["context"]
-    await run_agent(user_input, context_input, env_file, revisions)
+    await run_agent(user_input, context_input, revisions)
     log_done("Task completed successfully.")

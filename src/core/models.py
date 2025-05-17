@@ -1,6 +1,58 @@
 from typing import Literal
 
+from agents import ModelSettings
 from pydantic import BaseModel, Field
+
+
+class AgentSettings(BaseModel):
+    name: str = Field(..., description="The name of the agent.")
+    is_task_agent: bool = Field(
+        True, description="Indicates if the agent is a task agent."
+    )
+    model: str = Field(..., description="The model to be used by the agent.")
+    model_settings: ModelSettings = Field(
+        default=ModelSettings(
+            temperature=0.0,
+            max_tokens=8192,
+            tool_choice="required",
+        ),
+        description="Settings for the model.",
+    )
+
+
+class ProviderSettings(BaseModel):
+    api_key: str = Field(..., description="API key for the model provider.")
+    base_url: str = Field(..., description="Base URL for the model provider.")
+
+
+class Settings(BaseModel):
+    provider: ProviderSettings = Field(
+        ..., description="Configuration for the model provider."
+    )
+    context_builder: AgentSettings = Field(
+        ..., description="Configuration for the context builder agent."
+    )
+    planner: AgentSettings = Field(
+        ..., description="Configuration for the planner agent."
+    )
+    researcher: AgentSettings = Field(
+        ..., description="Configuration for the researcher agent."
+    )
+    extractor: AgentSettings = Field(
+        ..., description="Configuration for the extractor agent."
+    )
+    analyzer: AgentSettings = Field(
+        ..., description="Configuration for the analyzer agent."
+    )
+    writer: AgentSettings = Field(
+        ..., description="Configuration for the writer agent."
+    )
+    editor: AgentSettings = Field(
+        ..., description="Configuration for the editor agent."
+    )
+    evaluator: AgentSettings = Field(
+        ..., description="Configuration for the evaluator agent."
+    )
 
 
 class PlanStep(BaseModel):

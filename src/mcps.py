@@ -1,5 +1,6 @@
 import json
 import os
+from typing import Any
 
 from agents.mcp import MCPServerSse, MCPServerSseParams
 
@@ -13,7 +14,7 @@ def get_mcp_blackboard_server_params() -> MCPServerSseParams:
     """
     return MCPServerSseParams(
         url=os.getenv("MCP_BLACKBOARD_SERVER", "http://localhost:8000/sse"),
-        headers=None,
+        headers={},
         timeout=180,
         sse_read_timeout=180,
     )
@@ -21,7 +22,7 @@ def get_mcp_blackboard_server_params() -> MCPServerSseParams:
 
 async def get_result(
     plan_id: str, step_id: str, agent_name: str, server: MCPServerSse
-) -> str | dict:
+) -> Any:
     """
     Get the result from the blackboard using the provided plan ID, step ID,
     and agent name.
@@ -44,4 +45,4 @@ async def get_result(
     )
     if not data:
         raise ValueError("No result found in memory")
-    return json.loads(data.content[0].text)
+    return json.loads(data.content[0].text)  # type: ignore
