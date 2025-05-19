@@ -2,9 +2,9 @@ from agents import Agent
 
 from actors.base import build_agent
 from core.constants import TASK_AGENTS_INSTRUCTIONS
-from core.models import Score
+from core.models import AgentName, Score
 from core.utils import get_settings
-from tools.web_search import tool as web_search_tool
+from tools.web_search import web_search_tool
 
 
 def get_info(name: str, instructions: str) -> str:
@@ -18,6 +18,7 @@ def get_info(name: str, instructions: str) -> str:
     Returns:
         str: The formatted string with agent info
     """
+
     return (
         f"---\n> **Agent**: {name.strip()}\n> "
         f"**Agent Instructions**: {instructions.strip()}"
@@ -27,44 +28,45 @@ def get_info(name: str, instructions: str) -> str:
 settings = get_settings()
 researcher = build_agent(
     settings=settings.researcher,
-    instructions=TASK_AGENTS_INSTRUCTIONS[settings.researcher.name],
+    instructions=TASK_AGENTS_INSTRUCTIONS[settings.researcher.name.value],
     extra_tools=[web_search_tool],
 )
 
 
 extractor = build_agent(
     settings=settings.extractor,
-    instructions=TASK_AGENTS_INSTRUCTIONS[settings.extractor.name],
+    instructions=TASK_AGENTS_INSTRUCTIONS[settings.extractor.name.value],
 )
 
 analyzer = build_agent(
     settings=settings.analyzer,
-    instructions=TASK_AGENTS_INSTRUCTIONS[settings.analyzer.name],
+    instructions=TASK_AGENTS_INSTRUCTIONS[settings.analyzer.name.value],
 )
 
 writer = build_agent(
     settings=settings.writer,
-    instructions=TASK_AGENTS_INSTRUCTIONS[settings.writer.name],
+    instructions=TASK_AGENTS_INSTRUCTIONS[settings.writer.name.value],
 )
 
 editor = build_agent(
     settings=settings.editor,
-    instructions=TASK_AGENTS_INSTRUCTIONS[settings.editor.name],
+    instructions=TASK_AGENTS_INSTRUCTIONS[settings.editor.name.value],
 )
 
 evaluator = build_agent(
     settings=settings.evaluator,
-    instructions=TASK_AGENTS_INSTRUCTIONS[settings.evaluator.name],
+    instructions=TASK_AGENTS_INSTRUCTIONS[settings.evaluator.name.value],
     output_type=Score,
 )
 
+
 TASK_AGENTS_REGISTRY: dict[str, Agent] = {
-    "Researcher": researcher,
-    "Extractor": extractor,
-    "Analyzer": analyzer,
-    "Writer": writer,
-    "Editor": editor,
-    "Evaluator": evaluator,
+    AgentName.RESEARCHER.value: researcher,
+    AgentName.EXTRACTOR.value: extractor,
+    AgentName.ANALYZER.value: analyzer,
+    AgentName.WRITER.value: writer,
+    AgentName.EDITOR.value: editor,
+    AgentName.EVALUATOR.value: evaluator,
 }
 
 

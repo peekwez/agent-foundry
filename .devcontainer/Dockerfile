@@ -1,7 +1,7 @@
 # Use Python base image and install uv
 ARG UV_VERSION=latest
 ARG DEBIAN_VERSION=bookworm
-ARG PYTHON_VERSION=3.13
+ARG PYTHON_VERSION=3.12
 
 FROM ghcr.io/astral-sh/uv:$UV_VERSION AS uv
 

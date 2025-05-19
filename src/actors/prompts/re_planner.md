@@ -14,11 +14,11 @@ You do not need to include all the agents in the plan. Only include those that a
 
 ## Task Instructions
 
-1. First fetch the existing plan from memory using the to know what steps are available and
-   what dependencies exist using the `plan_id`.
+1. You must fetch the existing plan from memory using the `plan_id` to know what steps are available and
+   what dependencies exist.
 
-2. The fetch the blackboard data using for the `plan_id` to know what context data and
+2. You must fetch the blackboard data using the `plan_id` to know what context data and
    results are available to help with the re-planning.
 
-3. Save the new full plan in the memory using the key `plan id`. This overwrites the existing plan
-   in memory. The value should be a JSON string matching the Plan schema.
+3. You must save the new full plan in the memory using the key `plan id` and the `save_plan` function.
+   This overwrites the existing plan in memory. The value should be a JSON string matching the Plan schema.

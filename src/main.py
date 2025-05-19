@@ -1,7 +1,7 @@
 import json
 from typing import Any
 
-from agents import Agent, Runner, custom_span, gen_trace_id, set_tracing_disabled, trace
+from agents import Agent, Runner, custom_span, gen_trace_id, trace
 from agents.mcp import MCPServerSse
 
 from actors.base import get_last_agent_step
@@ -15,7 +15,7 @@ from core.utils import load_task_config, log_done, log_info
 from mcps import get_mcp_blackboard_server_params, get_result
 
 
-async def add_mcp_server(agent: Agent, server: MCPServerSse):
+async def add_mcp_server(agent: Agent, server: MCPServerSse) -> None:
     """
     Add a MCP server to the agent.
 
@@ -28,7 +28,7 @@ async def add_mcp_server(agent: Agent, server: MCPServerSse):
     agent.mcp_servers.append(server)
 
 
-async def add_mcp_server_to_all_agents(server: MCPServerSse):
+async def add_mcp_server_to_all_agents(server: MCPServerSse) -> None:
     """
     Add a MCP server to all agents in the TASK_AGENTS_REGISTRY.
 
@@ -65,7 +65,7 @@ async def build_context(
         context_input = context_input.strip()
     elif isinstance(context_input, dict):
         context_input = json.dumps(context_input, indent=2)
-    elif isinstance(context_input, list):  # type: ignore
+    elif isinstance(context_input, list):
         context_input = "\n".join(context_input)
     else:
         raise ValueError("Invalid context input type")
@@ -158,7 +158,7 @@ async def fetch_output(plan: Plan, server: MCPServerSse) -> str:
     return value if isinstance(value, str) else json.dumps(value, indent=2)
 
 
-async def save_result(plan: Plan, server: MCPServerSse):
+async def save_result(plan: Plan, server: MCPServerSse) -> None:
     """
     Save the result of the plan to a file.
 
@@ -192,8 +192,6 @@ async def run_agent(
         revisions (int): The number of revisions to perform if needed.
     """
 
-    set_tracing_disabled(True)
-
     trace_id = gen_trace_id()
     guid = trace_id.split("_")[-1]
     server_params = get_mcp_blackboard_server_params()
@@ -202,6 +200,7 @@ async def run_agent(
         params=server_params,
         cache_tools_list=True,
         name="MCP Blackboard Server",
+        client_session_timeout_seconds=180,
     ) as server:
         # Add the MCP server to all agents
         await add_mcp_server_to_all_agents(server)
@@ -223,7 +222,7 @@ async def run_agent(
             await save_result(revised_plan, server)
 
 
-async def run(task_config_file: str, revisions: int = 3):
+async def run(task_config_file: str, revisions: int = 3) -> None:
     """
     Main function to run the agent with the provided task configuration.
 

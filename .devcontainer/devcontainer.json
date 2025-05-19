@@ -1,5 +1,5 @@
 {
-  "name": "agent-foundry-py313",
+  "name": "agent-foundry-py312",
   "build": {
     "dockerfile": "Dockerfile",
     "runArgs": [
@@ -9,7 +9,7 @@
     "args": {
       "UV_VERSION": "latest",
       "DEBIAN_VERSION": "bookworm",
-      "PYTHON_VERSION": "3.13"
+      "PYTHON_VERSION": "3.12"
     }
   },
   "features": {

@@ -1,4 +1,5 @@
-from actors.base import build_agent
+from agents import Agent
+
 from core.models import Context
 from core.utils import get_settings
 
@@ -9,21 +10,20 @@ a task.
 Given a list of file paths or URLs you create a concise description
 for the media based on the contents.
 
-The following tools are available to you:
-- `read_context`: Fetches the contents of the context items.
-- `save_context_description`: Stores the description for each item.
-
-You must fetch the contents of the context items using the `read_context`
-tool to generate the descriptions. You should not include irrelevant
+Fetch each context item using the `read_context` tool and generate a
+description based on the contents. You should not include irrelevant
 information or details that are not necessary for completing the task.
-
-You must store the description for each item using the using the 
-`save_context_description` tool.
+Then save the description for each item using the `save_context_description`
+tool.
 """
 
 settings = get_settings()
-context_builder = build_agent(
-    settings=settings.context_builder,
+
+context_builder = Agent(
+    name="Context Builder",
+    model=settings.context_builder.model,
     instructions=instructions,
+    model_settings=settings.context_builder.model_settings,
+    tool_use_behavior="run_llm_again",
     output_type=Context,
 )

@@ -17,27 +17,27 @@ class TaskManager:
         self.dependencies = {s.id: set(s.depends_on) for s in plan.steps}
         self.completed = {s.id for s in plan.steps if s.status == "completed"}
 
-    async def _run_step(self, step: PlanStep):
+    async def _run_step(self, step: PlanStep) -> int:
         # run the step
         message = (
             f"{step.agent} has completed the step {step.id}/{len(self.plan.steps)}"
             f" for plan {self.plan.id[:8]:8s}..."
         )
-        agent = TASK_AGENTS_REGISTRY[step.agent]
+        agent = TASK_AGENTS_REGISTRY[step.agent.value]
         input = f"{step.prompt} \n The plan id is '{self.plan.id}'"
-        result = await Runner.run(agent, input=input, max_turns=60)
+        await Runner.run(agent, input=input, max_turns=60)
 
         # update the completed steps
         self.plan.steps[step.id - 1].status = "completed"
         self.completed.add(step.id)
         log_done(message)
-        if agent.name == "Evaluator":
-            print(result.final_output)
         return step.id
 
-    async def _get_score(self):
+    async def _get_score(self) -> Score:
         # After all steps are done get the evaluation scores
         # and update the plan status if needed
+        # sleep for a while to ensure the score is available
+        await asyncio.sleep(5)
         step: PlanStep = get_last_agent_step(
             agent_name="Evaluator", steps=self.plan.steps
         )
@@ -52,7 +52,7 @@ class TaskManager:
             raise ValueError("No score found in memory")
         return score
 
-    async def run(self):
+    async def run(self) -> Score:
         pending = {s.id: s for s in self.plan.steps if s.status == "pending"}
         while pending:
             ready = [

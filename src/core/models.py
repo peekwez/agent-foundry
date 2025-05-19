@@ -1,18 +1,77 @@
+from enum import Enum
 from typing import Literal
 
 from agents import ModelSettings
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class AgentName(str, Enum):
+    RESEARCHER = "researcher"
+    EXTRACTOR = "extractor"
+    ANALYZER = "analyzer"
+    WRITER = "writer"
+    EDITOR = "editor"
+    EVALUATOR = "evaluator"
+
+    @classmethod
+    def _missing_(cls, value: object) -> "AgentName | None":
+        """
+        Find the corresponding AgentName for a given value.
+
+        Args:
+            value (object): The value to match against AgentName members.
+
+        Returns:
+            AgentName | None: The matching AgentName member or None.
+        """
+        if isinstance(value, str):
+            value_lower = value.lower()
+            for member in cls:
+                if member.value == value_lower:
+                    return member
+        return None
+
+    def __str__(self) -> str:
+        return self.value
+
+
+class BaseAgentName(str, Enum):
+    CONTEXT_BUILDER = "context builder"
+    PLANNER = "planner"
+
+    @classmethod
+    def _missing_(cls, value: object) -> "BaseAgentName | None":
+        """
+        Find the corresponding BaseAgentName for a given value.
+
+        Args:
+            value (object): The value to match against BaseAgentName members.
+
+        Returns:
+            BaseAgentName | None: The matching BaseAgentName member or None.
+        """
+        if isinstance(value, str):
+            value_lower = value.lower()
+            for member in cls:
+                if member.value == value_lower:
+                    return member
+        return None
+
+    def __str__(self) -> str:
+        return self.value
 
 
 class AgentSettings(BaseModel):
-    name: str = Field(..., description="The name of the agent.")
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    name: BaseAgentName | AgentName = Field(..., description="The name of the agent.")
     is_task_agent: bool = Field(
-        True, description="Indicates if the agent is a task agent."
+        default=True, description="Indicates if the agent is a task agent."
     )
     model: str = Field(..., description="The model to be used by the agent.")
     model_settings: ModelSettings = Field(
         default=ModelSettings(
-            temperature=0.0,
+            temperature=None,
             max_tokens=8192,
             tool_choice="required",
         ),
@@ -22,7 +81,9 @@ class AgentSettings(BaseModel):
 
 class ProviderSettings(BaseModel):
     api_key: str = Field(..., description="API key for the model provider.")
-    base_url: str = Field(..., description="Base URL for the model provider.")
+    base_url: str | None = Field(
+        default=None, description="Base URL for the model provider."
+    )
 
 
 class Settings(BaseModel):
@@ -57,14 +118,9 @@ class Settings(BaseModel):
 
 class PlanStep(BaseModel):
     id: int = Field(..., description="Unique identifier for the step.")
-    agent: Literal[
-        "Researcher",
-        "Extractor",
-        "Analyzer",
-        "Writer",
-        "Editor",
-        "Evaluator",
-    ] = Field(..., description="The agent responsible for executing the step.")
+    agent: AgentName = Field(
+        ..., description="The agent responsible for executing the step."
+    )
     prompt: str = Field(..., description="The prompt to be sent to the agent.")
     revision: int = Field(..., description="The revision number of the step.")
     status: Literal["pending", "completed"] = Field(

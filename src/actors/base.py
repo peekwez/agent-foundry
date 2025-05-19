@@ -1,7 +1,7 @@
 import pathlib
 from typing import Any
 
-from agents import Agent
+from agents import Agent, ModelSettings
 
 from core.models import AgentSettings, PlanStep
 
@@ -34,16 +34,19 @@ def build_agent(
     full_instructions = instructions
     if settings.is_task_agent:
         full_instructions = TASK_AGENTS_EXTRA_PROMPT.format(
-            name=f"{settings.name} Agent", instructions=instructions
+            name=f"{settings.name.value} Agent", instructions=instructions
         )
 
     return Agent(
-        name=settings.name,
+        name=settings.name.value,
         model=settings.model,
         instructions=full_instructions,
         tools=tools,
         tool_use_behavior="run_llm_again",
-        model_settings=settings.model_settings,
+        model_settings=ModelSettings(
+            max_tokens=settings.model_settings.max_tokens,
+            tool_choice=settings.model_settings.tool_choice,
+        ),
         **kwargs,
     )
 
