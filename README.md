@@ -22,30 +22,58 @@
 
 ## 🗂️ Project Layout
 
-```
-src/
-├── main.py                # Application entrypoint (`make run`)
-├── mcps.py                # Interfaces to Managed Client Protocols
-├── version.py             # Semantic version helper
-│
-├── core/                  # Framework internals
-│   ├── config.py          # Env + settings loader
-│   ├── models.py          # Pydantic base models & schemas
-│   ├── utils.py           # Misc helpers
+```bash
+.
+├── env-sample.txt
+├── LICENSE
+├── Makefile
+├── notes/
+│   └── openai-models.txt
+├── pyproject.toml
+├── README.md
+├── samples/
+│   ├── files.json
+│   ├── mortgage/
+│   │   ├── _task.yaml
+│   │   ├── credit_report.pdf
+│   │   ├── loe_sample.png
+│   │   └── ps_sample.png
+│   └── research/
+│       ├── _task.yaml
+│       ├── first_then.pdf
+│       ├── org_chart.png
+│       └── us_symbols.csv
+├── src/
+│   ├── __init__.py
+│   ├── actors/
+│   │   ├── __init__.py
+│   │   ├── base.py
+│   │   ├── builder.py
+│   │   ├── executors.py
+│   │   ├── manager.py
+│   │   ├── planner.py
+│   │   └── prompts/
+│   │       ├── planner.md
+│   │       ├── re_planner.md
+│   │       └── tasks.md
+│   ├── cmd.py
+│   ├── core/
+│   │   ├── __init__.py
+│   │   ├── config.py
+│   │   ├── config.yaml.j2
+│   │   ├── constants.py
+│   │   ├── models.py
+│   │   ├── processor.py
+│   │   └── utils.py
+│   ├── main.py
+│   ├── mcps.py
+│   ├── tools/
+│   │   ├── __init__.py
+│   │   └── web_search.py
+│   └── version.py
+├── tests/
 │   └── __init__.py
-│
-├── actors/                # Domain‑specific “agents”
-│   ├── base.py            # Shared actor behaviours
-│   ├── planner.py         # Creates execution DAG
-│   ├── builder.py         # Turns plan → concrete tasks
-│   ├── executors.py       # Runs atomic steps
-│   ├── manager.py         # Supervises & aggregates results
-│   ├── constants.py
-│   └── prompts/           # Markdown prompt templates
-│       ├── planner.md
-│       ├── re_planner.md
-│       └── tasks.md
-└── ...
+└── uv.lock
 ```
 
 > **Note**: `__pycache__/` and `__MACOSX/` artefacts are ignored – they need not be committed.
