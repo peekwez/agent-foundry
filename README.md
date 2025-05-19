@@ -3,7 +3,7 @@
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.12%20%7C%203.13-blue)
 
-> **Version 0.1.0**  
+> **Version 0.1.0**
 > Multi‑agent framework for planning, executing, and evaluating complex tasks with a focus on reproducibility and developer ergonomics.
 
 ---
@@ -65,9 +65,9 @@ The system is driven by a **goal** and a list of **context artifacts**. At runti
 ### Example context list
 
 ```text
-abfs://mcp-tests/generic/us_symbols.csv
-abfs://mcp-tests/generic/org_chart.png
-abfs://mcp-tests/generic/first_then.pdf
+file:///mnt/shared/data/research/us_symbols.csv
+file:///mnt/shared/data/research/org_chart.png
+file:///mnt/shared/data/research/first_then.pdf
 http://goldfinger.utias.utoronto.ca/dwz/
 https://www.youtube.com/watch?v=yYALsys-P_w
 ```
@@ -106,7 +106,7 @@ make run           # ⇒ cd src && uv run -m main
 
 `main.py` will:
 
-1. Load configuration (`core.config.Settings`)
+1. Load configuration (`core.utils`)
 2. Instantiate actors
 3. Generate a plan from human input
 4. Execute tasks and stream progress
@@ -128,11 +128,59 @@ make run           # ⇒ cd src && uv run -m main
 
 ## 🔌 Configuration
 
-All settings are environment‑driven. Create a `.env` in project root (see `core/config.py` for fields). Example:
+All settings are environment‑driven. Create a `.env` in project root (see `core/models.py` for fields). Example:
 
 ```dotenv
-OPENAI_API_KEY="sk-..."
-MCP_BLACKBOARD_SERVER="http://localhost:8000/sse"
+# tavily and logfire
+TAVILY_API_KEY=
+LOGFIRE_WRITE_KEY=
+
+# mcp blackboard server
+MCP_BLACKBOARD_SERVER=http://localhost:8000/sse
+
+# provider
+MODEL_API_KEY=
+MODEL_BASE_URL=https://genai-sharedservice-americas.pwc.com
+
+# context builder agent
+CONTEXT_BUILDER_MODEL=openai.o3-2025-04-16
+CONTEXT_BUILDER_TEMPERATURE=0
+CONTEXT_BUILDER_MAX_TOKENS=4096
+
+# planner agent
+PLANNER_MODEL=openai.o3-2025-04-16
+PLANNER_TEMPERATURE=0
+PLANNER_MAX_TOKENS=4096
+
+# researcher agent
+RESEARCHER_MODEL=openai.o3-2025-04-16
+RESEARCHER_TEMPERATURE=0
+RESEARCHER_MAX_TOKENS=8192
+
+# extractor agent
+EXTRACTOR_MODEL=openai.o3-mini-2025-01-31
+EXTRACTOR_TEMPERATURE=0
+EXTRACTOR_MAX_TOKENS=4096
+
+# analyzer agent
+ANALYZER_MODEL=openai.o3-mini-2025-01-31
+ANALYZER_TEMPERATURE=0
+ANALYZER_MAX_TOKENS=4096
+
+# writer agent
+WRITER_MODEL=openai.o1-2024-12-17
+WRITER_TEMPERATURE=0.2
+WRITER_MAX_TOKENS=16384
+
+# editor agent
+EDITOR_MODEL=openai.o1-2024-12-17
+EDITOR_TEMPERATURE=0.2
+EDITOR_MAX_TOKENS=16384
+
+# evaluator agent
+EVALUATOR_MODEL=openai.o3-mini-2025-01-31
+EVALUATOR_TEMPERATURE=0
+EVALUATOR_MAX_TOKENS=1024
 ```
 
 ---
@@ -147,10 +195,10 @@ MCP_BLACKBOARD_SERVER="http://localhost:8000/sse"
 
    Inherit from `BaseActor` and register it in `actors/__init__.py`.
 
-2. **Custom prompts**  
+2. **Custom prompts**
    Drop a Markdown file in `actors/prompts/` and reference it via the actor’s `prompt_file` attribute.
 
-3. **Integrate external tools / MCPs**  
+3. **Integrate external tools / MCPs**
    Extend `mcps.py` with a `{YourTool}MCP` class exposing the desired ops, then inject it where needed.
 
 ---
