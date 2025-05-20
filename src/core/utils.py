@@ -106,6 +106,8 @@ def configure_langfuse_tracing() -> None:
     logfire.configure(
         send_to_logfire=False,
         service_name="agent-foundry",
+        console=False,
+        scrubbing=logfire.ScrubbingOptions(),
     )
     logfire.instrument_openai_agents()
 
