@@ -1,6 +1,9 @@
 # tavily and logfire
 TAVILY_API_KEY=
 LOGFIRE_WRITE_KEY=
+LANGFUSE_HOST=
+LANGFUSE_PUBLIC_KEY=
+LANGFUSE_SECRET_KEY=
 
 # mcp blackboard server
 MCP_BLACKBOARD_SERVER=http://localhost:8000/sse
