@@ -148,3 +148,4 @@ tmp
 src.zip
 Archive.zip
 .env*
+mlruns/

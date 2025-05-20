@@ -1,10 +1,11 @@
+# type: ignore
 import asyncio
 
 import click
 
 
 @click.group()
-def cli():
+def cli() -> None:
     """
     Command-line interface for running the agent with the provided task configuration.
     """
@@ -33,7 +34,7 @@ def cli():
     default=3,
     help="Number of revisions to perform if needed.",
 )
-def run_task(task_config_file: str, env_file: str, revisions: int):
+def run_task(task_config_file: str, env_file: str, revisions: int) -> None:
     """
     Run the agent with the provided task configuration.
 
@@ -41,6 +42,12 @@ def run_task(task_config_file: str, env_file: str, revisions: int):
         task_config_file (str): The path to the task configuration file.
         env_file (str): The path to the environment file.
         revisions (int): The number of revisions to perform if needed.
+
+    Raises:
+        FileNotFoundError: If the task configuration file does not exist.
+
+    Returns:
+        None
     """
     from core.utils import load_settings
 
@@ -65,13 +72,19 @@ def run_task(task_config_file: str, env_file: str, revisions: int):
     default="../.env",
     help="Path to the environment file.",
 )
-def test_task(option: str, env_file: str):
+def test_task(option: str, env_file: str) -> None:
     """
     Run the specified test task.
 
     Args:
         option (str): The test to run ('mortgage' or 'research').
         env_file (str): The path to the environment file.
+
+    Raises:
+        FileNotFoundError: If the task configuration file does not exist.
+
+    Returns:
+        None
     """
     from pathlib import Path
 

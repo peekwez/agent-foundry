@@ -65,7 +65,7 @@ async def build_context(
         context_input = context_input.strip()
     elif isinstance(context_input, dict):
         context_input = json.dumps(context_input, indent=2)
-    elif isinstance(context_input, list):
+    elif isinstance(context_input, list):  # type: ignore[unreachable]
         context_input = "\n".join(context_input)
     else:
         raise ValueError("Invalid context input type")

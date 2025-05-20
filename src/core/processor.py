@@ -147,7 +147,7 @@ class TraceApp(App[None]):  # type: ignore
             with TabPane("Tasks", id="tasks"):
                 yield Label("Agent Task Progress", classes="task-name")
                 task_names = [
-                    "context_builder",
+                    "context builder",
                     "planner",
                     "researcher",
                     "extractor",
@@ -209,7 +209,7 @@ class TraceApp(App[None]):  # type: ignore
     async def simulate_tasks(self) -> None:
         """Simulate updating progress bars for agent tasks."""
         task_names = [
-            "context_builder",
+            "context builder",
             "planner",
             "researcher",
             "extractor",
