@@ -20,7 +20,7 @@ def get_info(name: str, instructions: str) -> str:
     """
 
     return (
-        f"---\n> **Agent**: {name.strip()}\n> "
+        f"---\n> **Agent**: {name.strip().capitalize()}\n> "
         f"**Agent Instructions**: {instructions.strip()}"
     )
 

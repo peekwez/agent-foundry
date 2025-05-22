@@ -34,11 +34,11 @@ def build_agent(
     full_instructions = instructions
     if settings.is_task_agent:
         full_instructions = TASK_AGENTS_EXTRA_PROMPT.format(
-            name=f"{settings.name.value} Agent", instructions=instructions
+            name=f"{settings.name.value.capitalize()} Agent", instructions=instructions
         )
 
     return Agent(
-        name=settings.name.value,
+        name=settings.name.value.capitalize(),
         model=settings.model,
         instructions=full_instructions,
         tools=tools,

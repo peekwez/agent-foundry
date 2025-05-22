@@ -20,8 +20,9 @@ class TaskManager:
     async def _run_step(self, step: PlanStep) -> int:
         # run the step
         message = (
-            f"{step.agent} has completed the step {step.id}/{len(self.plan.steps)}"
-            f" for plan {self.plan.id[:8]:8s}..."
+            f"{step.agent.capitalize()} has completed the step "
+            f"{step.id}/{len(self.plan.steps)} "
+            f"for plan {self.plan.id[:8]:8s}..."
         )
         agent = TASK_AGENTS_REGISTRY[step.agent.value]
         input = f"{step.prompt} \n The plan id is '{self.plan.id}'"
