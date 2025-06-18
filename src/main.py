@@ -182,6 +182,7 @@ async def run_agent(
     user_input: str,
     context_input: str | list[str] | dict[str, str] | None,
     revisions: int = 3,
+    trace_id: str | None = None,
 ) -> None:
     """
     Run the agent to perform a task based on user input and context.
@@ -192,7 +193,7 @@ async def run_agent(
         revisions (int): The number of revisions to perform if needed.
     """
 
-    trace_id = gen_trace_id()
+    trace_id = gen_trace_id() if trace_id is None else trace_id
     guid = trace_id.split("_")[-1]
     server_params = get_mcp_blackboard_server_params()
 

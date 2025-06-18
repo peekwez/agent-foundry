@@ -121,9 +121,10 @@ def configure_mlflow_tracing() -> None:
     """
     import mlflow
 
+    tracking_uri = os.environ.get("MLFLOW_TRACKING_URI", "http://0.0.0.0:5000")
     mlflow.openai.autolog()  # type: ignore
-    mlflow.set_tracking_uri("http://localhost:8080")
-    mlflow.set_experiment("OpenAI Agent")
+    mlflow.set_tracking_uri(tracking_uri)  # type: ignore
+    mlflow.set_experiment("OpenAI Agent")  # type: ignore
 
 
 def configure_logfire_tracing() -> None:
@@ -226,7 +227,7 @@ def configure_model_client(settings: Settings) -> None:
         api_key=settings.provider.api_key,
         timeout=Timeout(300),
     )
-    set_default_openai_client(client, use_for_tracing=False)
+    set_default_openai_client(client, use_for_tracing=True)
     set_default_openai_api("chat_completions")
     configure_tracing(True, use_langfuse=True)
 

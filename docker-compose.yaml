@@ -1,0 +1,23 @@
+services:
+  # MLflow tracking server
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v3.0.0rc2
+    container_name: mlflow
+    ports:
+      - "5001:5000" # MLflow UI port
+    environment:
+      - MLFLOW_TRACKING_URI=http://0.0.0.0:5000
+    volumes:
+      - mlflow_data:/mlflow
+      - ./mlflow:/mlflow:rw
+      - ./mlflow/artifacts:/mlflow/artifacts:rw
+    command: >
+      bash -c "mkdir -p /mlflow/artifacts &&
+      mlflow server
+      --backend-store-uri sqlite:///mlflow.db
+      --host 0.0.0.0
+      --port 5000"
+
+volumes:
+  mlflow_data:
+    driver: local

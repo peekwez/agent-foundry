@@ -149,3 +149,5 @@ src.zip
 Archive.zip
 .env*
 mlruns/
+mlartifacts/
+mlflow

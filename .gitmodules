@@ -1,0 +1,3 @@
+[submodule "mcp-blackboard"]
+	path = mcp-blackboard
+	url = git@github.com:pwc-ca-adv-genai-factory/mcp-blackboard.git

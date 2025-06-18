@@ -1,9 +1,9 @@
 OPTION := mortgage
-TASK_FILE := src/samples/mortgage/_task.yaml
+TASK_FILE := $$(pwd)/samples/mortgage/_task.yaml
 ENV_FILE := $$(pwd)/.env
 REVISIONS := 3
 
-.PHONY: sync run format lint mypy tests coverage run link-path link-data test-context
+.PHONY: sync run format lint mypy tests coverage run link-path link-data test-context mlflow down
 
 hooks:
 	uv run pre-commit install
@@ -49,14 +49,25 @@ link-data: link-path
 
 test-run:
 	cd src && uv run -m \
-		cmd test-task -o ${OPTION}
+		commands test-task -o ${OPTION}
 
 task-run:
-	cd src && uv run -m \
-		cmd run-task \
+	cd src && uv run \
+		commands.py run-task \
 		-c ${TASK_FILE} \
 		-e ${ENV_FILE} \
 		-r ${REVISIONS}
 
-install-playwright:
-	npm install -g playwright
+# install-playwright:
+# 	npm install -g playwright
+
+mlflow:
+	docker compose up -d mlflow
+
+down:
+	docker compose down mlflow
+
+
+clone-blackboard:
+	git submodule add git@github.com:pwc-ca-adv-genai-factory/mcp-blackboard.git
+	git submodule update --init --recursive
