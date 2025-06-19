@@ -44,7 +44,6 @@ class TaskManager:
         )
         data = await get_result(self.plan.id, str(step.id), step.agent, self.server)
         score = None
-        breakpoint()
         if isinstance(data, str):
             score = Score.model_validate_json(data)
         elif isinstance(data, dict):

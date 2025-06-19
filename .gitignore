@@ -151,3 +151,4 @@ Archive.zip
 mlruns/
 mlartifacts/
 mlflow
+secrets
