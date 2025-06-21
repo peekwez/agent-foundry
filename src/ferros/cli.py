@@ -50,55 +50,14 @@ def run_task(task_config_file: str, env_file: str, revisions: int) -> None:
         None
     """
     from ferros.core.utils import load_settings
+    from ferros.main import run
 
     load_settings(env_file)
-
-    from main import run
 
     asyncio.run(run(task_config_file, revisions))
 
 
 @cli.command()
-@click.option(
-    "-o",
-    "--option",
-    type=click.Choice(["mortgage", "research"], case_sensitive=False),
-    required=True,
-    help="Specify the test to run: 'mortgage' or 'research'.",
-)
-@click.option(
-    "-e",
-    "--env-file",
-    type=click.Path(exists=True),
-    default="../.env",
-    help="Path to the environment file.",
-)
-def test_task(option: str, env_file: str) -> None:
-    """
-    Run the specified test task.
-
-    Args:
-        option (str): The test to run ('mortgage' or 'research').
-        env_file (str): The path to the environment file.
-
-    Raises:
-        FileNotFoundError: If the task configuration file does not exist.
-
-    Returns:
-        None
-    """
-    from pathlib import Path
-
-    from ferros.core.utils import load_settings
-
-    load_settings(env_file)
-    from main import run
-
-    task_config_file = Path(__file__).parent.parent / f"samples/{option}/_task.yaml"
-    asyncio.run(run(task_config_file.as_posix(), revisions=3))
-
-
-@click.command()
 @click.option(
     "-s",
     "--sdk",
@@ -111,9 +70,8 @@ def test_task(option: str, env_file: str) -> None:
 @click.option(
     "-c",
     "--config-file",
-    type=str,
+    type=click.Path(exists=True),
     required=True,
-    path=click.Path(exists=True),
     help="Path to the agent configuration file.",
 )
 @click.option(
@@ -139,14 +97,39 @@ def add_agent(sdk: str, config_file: str, env_file: str) -> None:
     Returns:
         None
     """
-    from core.utils import load_settings
-    from models.agent import SDKType
+    from ferros.agents.factory import register_agent
+    from ferros.core.utils import load_settings
+    from ferros.models.agents import SDKType
 
     load_settings(env_file)
 
-    from agents.factory import register_agent
-
     register_agent(SDKType(sdk), config_file)
+
+
+@cli.command()
+@click.option(
+    "-e",
+    "--env-file",
+    type=click.Path(exists=True),
+    default="../.env",
+    help="Path to the environment file.",
+)
+def list_agents(env_file: str) -> None:
+    """
+    List all registered agents.
+
+    Returns:
+        None
+    """
+    from ferros.agents.registry import get_registry
+    from ferros.core.utils import load_settings
+
+    load_settings(env_file)
+
+    registry = get_registry()
+    configs = registry.list()
+    for config in configs.agents:
+        print(f"Name: {config.name}, SDK: {config.sdk}, Version: {config.version}")
 
 
 if __name__ == "__main__":

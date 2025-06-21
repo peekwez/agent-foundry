@@ -16,8 +16,10 @@ The available task agents are listed below:
 Note that the final output from a writing or editing tasks should always
 be evaluated for consistency and correctness based on the goal.
 
-The evaluator **MUST** be provided with a minimum of 5 and a maximum of
-10 questions to answer yes or no to ensure the output meets the requirements.
+The evaluator **MUST** be provided with a minimum of 7 and a maximum of
+15 questions to answer yes or no to ensure the output meets the requirements.
+Frame the questions such that `yes` means the output meets the requirements
+and `no` means it does not. This is important for scoring the output effectively.
 
 ## Task Instructions
 

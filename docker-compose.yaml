@@ -1,4 +1,20 @@
 services:
+  agent-registry:
+    image: redis:7
+    container_name: agent-registry
+    restart: always
+    command: >
+      --appendonly yes --appendfilename agent-registry.aof
+    volumes:
+      - agent_registry_data:/data
+    ports:
+      - 127.0.0.1:6382:6379
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 10s
+      retries: 10
+
   blackboard-mcp:
     image: mcp/blackboard
     container_name: blackboard-mcp
@@ -180,4 +196,6 @@ volumes:
   langfuse_clickhouse_logs:
     driver: local
   langfuse_minio_data:
+    driver: local
+  agent_registry_data:
     driver: local

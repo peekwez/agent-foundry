@@ -11,13 +11,12 @@ authors = [
     { name = "Kwesi Apponsah", email = "kwesi.p.apponsah@pwc.com" },
 ]
 readme = "README.md"
-license = "LICENSE"
 requires-python = ">=3.12"
 dependencies = [
+    "apscheduler>=3.11.0",
     "azure-identity>=1.23.0",
     "certifi>=2025.1.31",
     "click>=8.1.8",
-    "etcd3>=0.12.0",
     "jinja2>=3.1.6",
     "langfuse>=2.60.5",
     "logfire>=3.16.0",

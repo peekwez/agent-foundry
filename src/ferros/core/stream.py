@@ -3,7 +3,7 @@ import json
 from redis.typing import ResponseT
 from rich.console import Console
 
-from ferros.core.utils import get_redis_client, get_settings
+from ferros.core.utils import get_redis_client
 
 STREAM_LAST_ID = "0-0"
 
@@ -19,9 +19,7 @@ async def get_stream(plan_id: str, stream_id: str = "0-0") -> ResponseT:
         str: The stream key for the plan.
     """
     stream_key = f"task-updates:{plan_id}"
-    redis_client = get_redis_client()
-    # if not redis_client.exists(stream_key):
-    #     raise ValueError(f"Stream with key '{stream_key}' does not exist.")
+    redis_client = get_redis_client(name="blackboard")
     return redis_client.xread({stream_key: stream_id}, count=10, block=5000)
 
 
@@ -65,15 +63,15 @@ async def stream_updates(plan_id: str, printer: Console | None = None) -> None:
 if __name__ == "__main__":
     from pathlib import Path
 
-    from core.utils import get_redis_client, get_settings, load_settings
     from rich import console as screen
+
+    from ferros.core.utils import get_redis_client, load_settings
 
     console = screen.Console()
     path = Path(__file__).parents[2] / ".env.agent"
     print("Loading settings from:", path.as_posix())
     load_settings(path.as_posix())
-    settings = get_settings()
-    redis_client = get_redis_client()
+    redis_client = get_redis_client(name="blackboard")
     import time
 
     stream_key = "task-updates:65710c2eccda4e9d8898c50816c5d601"

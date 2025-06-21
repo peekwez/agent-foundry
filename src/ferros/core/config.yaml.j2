@@ -3,16 +3,19 @@ provider:
   base_url: {{ env.MODEL_BASE_URL }}
 
 redis:
-    host: {{env.REDIS_HOST | default('127.0.0.1')}}
-    port: {{env.REDIS_PORT | default(6379)}}
-    db: {{env.REDIS_DB | default(1)}}
-    password: {{env.REDIS_PASSWORD | default('') }}
+    blackboard:
+        host: {{env.BLACKBOARD_REDIS_HOST | default('127.0.0.1')}}
+        port: {{env.BLACKBOARD_REDIS_PORT | default(6379)}}
+        db: {{env.BLACKBOARD_REDIS_DB | default(1)}}
+        username: {{env.BLACKBOARD_REDIS_USERNAME | default('') }}
+        password: {{env.BLACKBOARD_REDIS_PASSWORD | default('') }}
 
-etcd:
-    host: {{ env.ETCD_HOST | default('127.0.0.1') }}
-    port: {{ env.ETCD_PORT | default(2379) }}
-    username: {{ env.ETCD_USERNAME | default('') }}
-    password: {{ env.ETCD_PASSWORD | default('') }}
+    registry:
+        host: {{env.REGISTRY_REDIS_HOST | default('127.0.0.1')}}
+        port: {{env.REGISTRY_REDIS_PORT | default(6379)}}
+        db: {{env.REGISTRY_REDIS_DB | default(1)}}
+        username: {{env.REGISTRY_REDIS_USERNAME | default('') }}
+        password: {{env.REGISTRY_REDIS_PASSWORD | default('') }}
 
 context:
     name: 'Context Builder'

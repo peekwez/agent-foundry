@@ -1,5 +1,5 @@
 OPTION := mortgage
-TASK_FILE := $$(pwd)/samples/mortgage/_task.yaml
+TASK_FILE := $$(pwd)/samples/mortgage/_task-new.yaml
 ENV_FILE := $$(pwd)/.env.agent
 REVISIONS := 3
 
@@ -47,31 +47,14 @@ link-data: link-path
 
 	ls -l /tmp/genai/data
 
-test-run:
-	cd src && uv run -m \
-		commands test-task -o ${OPTION}
-
 task-run:
-	cd src && uv run \
-		commands.py run-task \
+	uv run ferros run-task \
 		-c ${TASK_FILE} \
 		-e ${ENV_FILE} \
 		-r ${REVISIONS}
 
-add-agent:
-	cd src && uv run -m commands add-agent
-		-s ${AGENT_SDK} \
-		-c $(CONFIG_FILE)
-		-e ${ENV_FILE} \
-
-# install-playwright:
-# 	npm install -g playwright
-
-# mlflow:
-# 	docker compose up -d mlflow
-
 install:
-	uv pip install -e .[dev]
+	uv pip install -e .
 
 check:
 	docker compose ps
@@ -85,3 +68,26 @@ up: down
 clone-blackboard:
 	git submodule add git@github.com:pwc-ca-adv-genai-factory/mcp-blackboard.git
 	git submodule update --init --recursive
+
+add-agents:
+	uv run ferros add-agent -c config/researcher.yaml.j2 -e .env.agent -s openai
+	uv run ferros add-agent -c config/extractor.yaml.j2 -e .env.agent -s openai
+	uv run ferros add-agent -c config/analyzer.yaml.j2 -e .env.agent -s openai
+	uv run ferros add-agent -c config/writer.yaml.j2 -e .env.agent -s openai
+	uv run ferros add-agent -c config/editor.yaml.j2 -e .env.agent -s openai
+	uv run ferros add-agent -c config/evaluator.yaml.j2 -e .env.agent -s openai
+
+list-agents:
+	uv run ferros list-agents -e .env.agent
+
+init-blackboard:
+	docker compose stop blackboard-mcp || true
+	docker compose rm -f blackboard-mcp || true
+	cd mcp-blackboard && make build
+	docker compose up -d blackboard-mcp
+
+init-registry:
+	docker compose stop agent-registry || true
+	docker compose rm -f agent-registry || true
+	docker volume rm -f agent-foundry_agent_registry_data || true
+	docker compose up -d agent-registry

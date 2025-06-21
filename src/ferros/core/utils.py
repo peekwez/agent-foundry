@@ -1,8 +1,6 @@
-import os
 from pathlib import Path
 from typing import Any
 
-import etcd3  # type: ignore
 import yaml  # type: ignore
 from agents import (  # set_trace_processors,; set_tracing_disabled,
     set_default_openai_api,
@@ -10,11 +8,11 @@ from agents import (  # set_trace_processors,; set_tracing_disabled,
 )
 from azure.identity import DefaultAzureCredential
 from dotenv import load_dotenv
-from jinja2 import Environment, FileSystemLoader
 from openai import AsyncOpenAI, Timeout
 from redis import Redis
 from rich.console import Console
 
+from ferros.core.parsers import load_config_file
 from ferros.core.tracing import configure_tracing
 from ferros.models.settings import Settings
 
@@ -47,8 +45,7 @@ TEMPLATES_DIR = Path(__file__).parent
 console = Console()
 settings: None | Settings = None
 client: None | AsyncOpenAI = None
-redis_client: None | Redis = None
-etcd_client: None | etcd3.Etcd3Client = None
+redis_clients: None | dict[str, Redis] = None
 
 
 def get_settings() -> Settings:
@@ -97,25 +94,6 @@ def configure_model_client() -> None:
     configure_tracing(True, use_langfuse=True)
 
 
-def load_yaml_j2(file_path: str) -> dict[str, Any]:
-    """
-    Load a YAML file with Jinja2 templating.
-
-    Args:
-        file_path (str): The path to the YAML file.
-
-    Returns:
-        dict: The loaded YAML content as a dictionary.
-    """
-    path = Path(file_path)
-    env = Environment(loader=FileSystemLoader(str(path.parent)))
-    template = env.get_template(path.name)
-
-    rendered_yaml: str = template.render(env=os.environ)
-
-    return yaml.safe_load(rendered_yaml)
-
-
 def load_settings(env_file: str) -> None:
     """
     Load the application settings from a .env file and render the configuration.
@@ -130,7 +108,7 @@ def load_settings(env_file: str) -> None:
     load_dotenv(env_file, override=True)
 
     file_path = TEMPLATES_DIR / "config.yaml.j2"
-    config_dict = load_yaml_j2(file_path.as_posix())
+    config_dict = load_config_file(file_path.as_posix())
     settings = Settings.model_validate(config_dict)
     configure_model_client()
 
@@ -188,44 +166,30 @@ def log_done(message: str) -> None:
     console.print(f"[green]✔[/green] {message}")
 
 
-def get_redis_client() -> Redis:
+def get_redis_client(name: str = "registry") -> Redis:
     """
     Get the Redis client for shared memory.
 
+    Args:
+        name (str): The name of the Redis client. Defaults to "registry".
     Returns:
         Redis: The Redis client for shared memory.
     """
 
-    global redis_client
-    if redis_client is None:
+    global redis_clients
+    if redis_clients is None:
         settings = get_settings()
-        if "windows.net" in settings.redis.host:
-            cred = DefaultAzureCredential()
-            token = cred.get_token("https://redis.azure.com/.default")
-            settings.redis.password = token.token
-        redis_client = Redis(**settings.redis.model_dump())
-    return redis_client
-
-
-def etcd_watcher(event: Any) -> None:
-    print(f"Etcd event: {event}")
-
-
-def get_etcd_client() -> etcd3.Etcd3Client:
-    """
-    Get the Etcd client for shared configuration.
-
-    Returns:
-        etcd3.Etcd3Client: The Etcd client for shared configuration.
-    """
-    global etcd_client
-    if etcd_client is None:
-        settings = get_settings()
-        etcd_client = etcd3.client(  # type:ignore
-            host=settings.etcd3.host,
-            port=settings.etcd3.port,
-            user=settings.etcd3.username,
-            password=settings.etcd3.password,
-        )
-        etcd_client.add_watch_callback("/agents/", etcd_watcher)  # type:ignore
-    return etcd_client
+        redis_clients = {}
+        for name, setting in settings.redis.items():
+            if "windows.net" in setting.host:
+                cred = DefaultAzureCredential()
+                token = cred.get_token("https://redis.azure.com/.default")
+                setting.password = token.token
+            redis_clients[name] = Redis(**setting.model_dump())
+    try:
+        return redis_clients[name]
+    except KeyError as e:
+        raise ValueError(
+            f"Redis client '{name}' not found. "
+            f"Available clients: {list(redis_clients.keys())}"
+        ) from e

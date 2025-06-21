@@ -2,7 +2,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-from ferros.models.agent import SDKType
+from ferros.models.agents import SDKType
 
 
 class PlanStep(BaseModel):

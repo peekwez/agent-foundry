@@ -1,16 +1,17 @@
 import hashlib
+import re
 from datetime import datetime
 from enum import StrEnum
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any
 
 from agents import Agent, AgentOutputSchemaBase, ModelSettings, Runner
 from agents.mcp import MCPServer
 from pydantic import BaseModel, ConfigDict, Field
 
-from ferros.core.utils import load_yaml_j2
+from ferros.core.parsers import load_config_file
 
-AgentSDK = Literal["openai-sdk", "google-adk", "pydantic-ai", "langgraph"]
+REGISTRY_PREFIX = "agents:config"
 
 
 class SDKType(StrEnum):
@@ -36,6 +37,24 @@ class SDKType(StrEnum):
                 if member.value == value_lower:
                     return member
         return None
+
+
+def config_key(name: str, sdk: SDKType, version: str) -> str:
+    """
+    Generate a unique configuration key for the agent.
+
+    Args:
+        name (str): The name of the agent.
+        sdk (SDKType): The SDK being used.
+        version (str): The version of the agent.
+
+    Returns:
+        str: The generated configuration key.
+    """
+    name = re.sub(r"\s+", "-", name).replace("--", "-").lower()
+    _sdk = sdk.lower()
+    version = version.lower()
+    return f"{REGISTRY_PREFIX}:{name}:{_sdk}:{version}"
 
 
 class AgentSDKConfig(BaseModel):
@@ -68,14 +87,14 @@ class AgentSDKConfig(BaseModel):
     )
 
     @property
-    def etcd_key(self) -> str:
+    def key(self) -> str:
         """
         Generate the etcd key for the agent configuration.
 
         Returns:
             str: The etcd key for the agent configuration.
         """
-        return f"/agents/{self.name.lower()}/{self.sdk.lower()}/{self.version.lower()}"
+        return config_key(self.name, self.sdk, self.version)
 
     @classmethod
     def from_yaml(cls, file_path: str) -> "AgentSDKConfig":
@@ -85,13 +104,13 @@ class AgentSDKConfig(BaseModel):
         Args:
             yaml_content (str): The YAML configuration content.
 
-        Return:
+        Returns:
             AgentSDKConfig: An instance of AgentSDKConfig.
         """
         contents = Path(file_path).read_bytes()
         h = hashlib.sha256()
         h.update(contents)
-        data = load_yaml_j2(file_path)
+        data = load_config_file(file_path)
         data["version"] = h.hexdigest()
         data["file_name"] = Path(file_path).name
         data["created_at"] = datetime.now().isoformat()
@@ -181,9 +200,15 @@ class LangGraphConfig(AgentSDKConfig):
 
 
 class AgentsConfig(BaseModel):
-    agents: list[
-        OpenAISDKConfig | GoogleADKConfig | PydanticAIConfig | LangGraphConfig
-    ] = Field(
+    agents: list[AgentSDKConfig] = Field(
         ...,
         description="A collection of agents to be used in the plan context.",
     )
+
+
+SDK_CLASS_MAP: dict[SDKType, type[AgentSDKConfig]] = {
+    SDKType.OPENAI: OpenAISDKConfig,
+    SDKType.GOOGLE: GoogleADKConfig,
+    SDKType.PYDANTIC: PydanticAIConfig,
+    SDKType.LANGGRAPH: LangGraphConfig,
+}

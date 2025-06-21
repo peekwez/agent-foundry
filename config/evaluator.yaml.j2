@@ -1,6 +1,6 @@
 sdk: openai
 name: Evaluator
-model: openai.o3-mini-2025-01-31
+model: vertex_ai.gemini-2.5-flash-preview-04-17
 instructions: |
   You critically assess outputs against requirements. Given a list of
   questions or criteria, you must evaluate the provided output and
@@ -43,4 +43,4 @@ instructions: |
 
   You must ensure that the output strictly adheres to this schema.
 model_settings:
-  max_tokens: 1024
+  max_tokens: 8192

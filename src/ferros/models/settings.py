@@ -1,7 +1,7 @@
 from agents import ModelSettings
 from pydantic import BaseModel, ConfigDict, Field
 
-from ferros.core.utils import load_yaml_j2
+from ferros.core.parsers import load_config_file
 
 
 class BaseSettings(BaseModel):
@@ -16,7 +16,7 @@ class BaseSettings(BaseModel):
         Returns:
             BaseSettings: An instance of the settings class.
         """
-        config_dict = load_yaml_j2(file_path)
+        config_dict = load_config_file(file_path)
         return cls.model_validate(config_dict)
 
 
@@ -29,7 +29,7 @@ class ProviderSettings(BaseSettings):
 
 class RedisSettings(BaseSettings):
     host: str = Field(default="127.0.0.1", description="Host for the Redis server.")
-    port: int = Field(default=6381, description="Port for the Redis server.")
+    port: int = Field(default=6379, description="Port for the Redis server.")
     db: int = Field(default=0, description="Database number for Redis.")
     password: str | None = Field(
         default=None, description="Password for the Redis server."
@@ -38,7 +38,7 @@ class RedisSettings(BaseSettings):
 
 class Etcd3Settings(BaseSettings):
     host: str = Field(default="127.0.0.1", description="Host for the etcd server.")
-    port: int = Field(default=2380, description="Port for the etcd server.")
+    port: int = Field(default=2379, description="Port for the etcd server.")
     username: str | None = Field(
         default=None, description="Username for the etcd server."
     )
@@ -65,14 +65,14 @@ class Settings(BaseSettings):
     provider: ProviderSettings = Field(
         ..., description="Configuration for the model provider."
     )
-    redis: RedisSettings = Field(
-        default=RedisSettings(),
+    redis: dict[str, RedisSettings] = Field(
+        default={"blackboard": RedisSettings(), "registry": RedisSettings()},
         description="Configuration for the Redis server.",
     )
-    etcd3: Etcd3Settings = Field(
-        default=Etcd3Settings(),
-        description="Configuration for the etcd3 server.",
-    )
+    # etcd: Etcd3Settings = Field(
+    #     default=Etcd3Settings(),
+    #     description="Configuration for the etcd3 server.",
+    # )
     context: AgentSettings = Field(
         ..., description="Configuration for the context builder agent."
     )

@@ -4,7 +4,7 @@ from agents.mcp import MCPServerSse
 
 from ferros.agents.utils import get_step
 from ferros.core.utils import log_done
-from ferros.models.agent import SDKType
+from ferros.models.agents import SDKType
 from ferros.models.evaluate import Evaluations
 from ferros.models.plan import Plan, PlanStep
 from ferros.runtime.openai import run as run_openai_agent
@@ -43,7 +43,7 @@ class TaskManager:
                     "LangGraph SDK is not implemented yet for TaskManager"
                 )
             case _:
-                raise ValueError(f"Unsupported agent SDK: {step.agent_sdk}")
+                raise ValueError("Unsupported agent SDK")
         # update the completed steps
         self.plan.steps[step.id - 1].status = "completed"
         self.completed.add(step.id)

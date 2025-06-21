@@ -5,7 +5,7 @@ from typing import Any
 from agents.mcp import MCPServerSse, MCPServerSseParams
 
 
-def get_mcp_blackboard_server_params() -> MCPServerSseParams:
+def get_params() -> MCPServerSseParams:
     """
     Get the parameters for the MCP server.
 

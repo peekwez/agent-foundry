@@ -2,53 +2,24 @@ import json
 from pathlib import Path
 from typing import Any
 
-from agents import Agent, Runner, custom_span, gen_trace_id, trace
+from agents import Runner, custom_span, gen_trace_id, trace
 from agents.mcp import MCPServerSse
 
-from ferros.agents.builder import context_builder
+from ferros.agents.builder import get_builder
+from ferros.agents.factory import get_agent_configs
 from ferros.agents.manager import TaskManager
-from ferros.agents.planner import planner, re_planner
+from ferros.agents.planner import get_planner
 from ferros.agents.utils import get_step
 from ferros.core.utils import load_task_config, log_done, log_info
 from ferros.models.context import Context
 from ferros.models.plan import Plan
-from ferros.tools.mcps import get_mcp_blackboard_server_params, get_result
+from ferros.tools.mcps import get_params, get_result
 
 RESULTS_STORAGE_PATH = Path(__file__).parents[1] / "tmp/results"
-print(RESULTS_STORAGE_PATH)
-
-
-async def add_mcp_server(agent: Agent, server: MCPServerSse) -> None:
-    """
-    Add a MCP server to the agent.
-
-    Args:
-        agent (Agent): The agent to which the server will be added.
-        server (MCPServerSse): The MCP server to be added.
-    """
-    if not agent.mcp_servers:
-        agent.mcp_servers = []
-    agent.mcp_servers.append(server)
-
-
-async def add_mcp_server_to_all_agents(server: MCPServerSse) -> None:
-    """
-    Add a MCP server to all agents in the TASK_AGENTS_REGISTRY.
-
-    Args:
-        server (MCPServerSse): The MCP server to be added.
-    """
-
-    await add_mcp_server(planner, server)
-    await add_mcp_server(re_planner, server)
-    await add_mcp_server(context_builder, server)
-    # for _, agent in TASK_AGENTS_REGISTRY.items():
-    #     await add_mcp_server(agent, server)
-    log_done("Agents updated with MCP server for blackboard...")
 
 
 async def build_context(
-    plan_id: str, agent: Agent, context_input: str | list[str] | dict[str, str]
+    plan_id: str, context_input: str | list[str] | dict[str, str], server: MCPServerSse
 ) -> Context:
     """
     Build context for the task using the context builder agent.
@@ -74,6 +45,7 @@ async def build_context(
         raise ValueError("Invalid context input type")
 
     input = f"{context_input}\n\nUse the UUID: {plan_id} as the plan id."
+    agent = get_builder(mcp_servers=[server])
     result = await Runner.run(agent, input=input, max_turns=20)
     context: Context = result.final_output
 
@@ -82,20 +54,25 @@ async def build_context(
     return context
 
 
-async def plan_task(plan_id: str, agent: Agent, user_input: str) -> Plan:
+async def plan_task(
+    plan_id: str, revision: int, user_input: str, server: MCPServerSse
+) -> Plan:
     """
     Plan the task using the planner agent.
 
     Args:
         plan_id (str): The unique identifier for the plan.
-        agent (Agent): The planner agent.
+        revision (int): The revision number for the plan.
         user_input (str): The user input for the task.
+        server (MCPServerSse): The MCP server to fetch the output from.
 
     Returns:
         Plan: The generated plan object with the steps for the task.
     """
     input = f"{user_input}\n\nUse the UUID: {plan_id} as the plan id."
-    result = await Runner.run(agent, input=input, max_turns=20)
+    context = get_agent_configs()
+    agent = get_planner(mcp_servers=[server], replanner=revision > 1)
+    result = await Runner.run(agent, input=input, max_turns=20, context=context)
     plan: Plan = result.final_output
 
     size = len(plan.steps)
@@ -127,18 +104,18 @@ async def execute_plan(
         Plan: The revised plan object after executing the task.
     """
 
-    revised_plan = plan
+    _plan = plan
     user_input = plan.goal
-    for rev in range(1, revisions + 1):
-        name = f"Plan Executor - Rev {rev}"
-        data: dict[str, Any] = {"Revision": rev, "Plan ID": plan_id}
+    for revision in range(1, revisions + 1):
+        name = f"Plan Executor - Rev {revision}"
+        data: dict[str, Any] = {"Revision": revision, "Plan ID": plan_id}
         with custom_span(name=name, data=data):
-            tasks = TaskManager(revised_plan, server=server)
+            tasks = TaskManager(_plan, server=server)
             eval = await tasks.run()
             if eval.score >= 0.8:
                 break
-        revised_plan = await plan_task(plan_id, re_planner, user_input)
-    return revised_plan
+        _plan = await plan_task(plan_id, revision, user_input, server)
+    return _plan
 
 
 async def fetch_output(plan: Plan, server: MCPServerSse) -> str:
@@ -196,26 +173,26 @@ async def run_agent(
 
     trace_id = gen_trace_id() if trace_id is None else trace_id
     guid = trace_id.split("_")[-1]
-    server_params = get_mcp_blackboard_server_params()
 
     async with MCPServerSse(
-        params=server_params,
+        params=get_params(),
         cache_tools_list=True,
         name="MCP Blackboard Server",
         client_session_timeout_seconds=180,
     ) as server:
-        # Add the MCP server to all agents
-        await add_mcp_server_to_all_agents(server)
-
         with trace(
             workflow_name=f"Knowledge Worker: {guid.upper()[:8]}", trace_id=trace_id
         ):
             # Build context
             if context_input:
-                await build_context(guid, context_builder, context_input)
+                await build_context(guid, context_input, server)
 
             # Plan the task
-            plan = await plan_task(guid, planner, user_input)
+            plan = await plan_task(guid, 1, user_input, server)
+            # from rich.console import Console
+            # c = Console()
+            # c.log(plan)
+            # return
 
             # Execute the plan, replan if needed and revise output
             revised_plan = await execute_plan(guid, plan, server, revisions)
