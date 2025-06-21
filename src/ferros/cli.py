@@ -49,9 +49,10 @@ def run_task(task_config_file: str, env_file: str, revisions: int) -> None:
     Returns:
         None
     """
-    from core.utils import load_settings
+    from ferros.core.utils import load_settings
 
     load_settings(env_file)
+
     from main import run
 
     asyncio.run(run(task_config_file, revisions))
@@ -88,13 +89,64 @@ def test_task(option: str, env_file: str) -> None:
     """
     from pathlib import Path
 
-    from core.utils import load_settings
+    from ferros.core.utils import load_settings
 
     load_settings(env_file)
     from main import run
 
     task_config_file = Path(__file__).parent.parent / f"samples/{option}/_task.yaml"
     asyncio.run(run(task_config_file.as_posix(), revisions=3))
+
+
+@click.command()
+@click.option(
+    "-s",
+    "--sdk",
+    type=click.Choice(
+        ["openai", "google", "pydantic", "langgraph"], case_sensitive=False
+    ),
+    required=True,
+    help="Name of the agent SDK to add.",
+)
+@click.option(
+    "-c",
+    "--config-file",
+    type=str,
+    required=True,
+    path=click.Path(exists=True),
+    help="Path to the agent configuration file.",
+)
+@click.option(
+    "-e",
+    "--env-file",
+    type=click.Path(exists=True),
+    default="../.env",
+    help="Path to the environment file.",
+)
+def add_agent(sdk: str, config_file: str, env_file: str) -> None:
+    """
+    Add a new agent configuration.
+
+    Args:
+        sdk (str): The name of the agent SDK to add
+            (openai, google, pydantic, langgraph).
+        config_file (str): The path to the agent configuration file.
+        env_file (str): The path to the environment file.
+
+    Raises:
+        FileNotFoundError: If the configuration file does not exist.
+
+    Returns:
+        None
+    """
+    from core.utils import load_settings
+    from models.agent import SDKType
+
+    load_settings(env_file)
+
+    from agents.factory import register_agent
+
+    register_agent(SDKType(sdk), config_file)
 
 
 if __name__ == "__main__":

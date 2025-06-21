@@ -13,6 +13,12 @@ The available task agents are listed below:
 
 {agent_list}
 
+Note that the final output from a writing or editing tasks should always
+be evaluated for consistency and correctness based on the goal.
+
+The evaluator **MUST** be provided with a minimum of 5 and a maximum of
+10 questions to answer yes or no to ensure the output meets the requirements.
+
 ## Task Instructions
 
 You MUST save the full plan in the memory using the key `plan id`

@@ -58,11 +58,21 @@ task-run:
 		-e ${ENV_FILE} \
 		-r ${REVISIONS}
 
+add-agent:
+	cd src && uv run -m commands add-agent
+		-s ${AGENT_SDK} \
+		-c $(CONFIG_FILE)
+		-e ${ENV_FILE} \
+
 # install-playwright:
 # 	npm install -g playwright
 
 # mlflow:
 # 	docker compose up -d mlflow
+
+install:
+	uv pip install -e .[dev]
+
 check:
 	docker compose ps
 

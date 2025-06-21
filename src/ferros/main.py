@@ -1,18 +1,21 @@
 import json
+from pathlib import Path
 from typing import Any
 
 from agents import Agent, Runner, custom_span, gen_trace_id, trace
 from agents.mcp import MCPServerSse
 
-from actors.base import get_last_agent_step
-from actors.builder import context_builder
-from actors.executors import TASK_AGENTS_REGISTRY
-from actors.manager import TaskManager
-from actors.planner import planner, re_planner
-from core.config import RESULTS_STORAGE_PATH
-from core.models import Context, Plan
-from core.utils import load_task_config, log_done, log_info
-from mcps import get_mcp_blackboard_server_params, get_result
+from ferros.agents.builder import context_builder
+from ferros.agents.manager import TaskManager
+from ferros.agents.planner import planner, re_planner
+from ferros.agents.utils import get_step
+from ferros.core.utils import load_task_config, log_done, log_info
+from ferros.models.context import Context
+from ferros.models.plan import Plan
+from ferros.tools.mcps import get_mcp_blackboard_server_params, get_result
+
+RESULTS_STORAGE_PATH = Path(__file__).parents[1] / "tmp/results"
+print(RESULTS_STORAGE_PATH)
 
 
 async def add_mcp_server(agent: Agent, server: MCPServerSse) -> None:
@@ -39,8 +42,8 @@ async def add_mcp_server_to_all_agents(server: MCPServerSse) -> None:
     await add_mcp_server(planner, server)
     await add_mcp_server(re_planner, server)
     await add_mcp_server(context_builder, server)
-    for _, agent in TASK_AGENTS_REGISTRY.items():
-        await add_mcp_server(agent, server)
+    # for _, agent in TASK_AGENTS_REGISTRY.items():
+    #     await add_mcp_server(agent, server)
     log_done("Agents updated with MCP server for blackboard...")
 
 
@@ -131,8 +134,8 @@ async def execute_plan(
         data: dict[str, Any] = {"Revision": rev, "Plan ID": plan_id}
         with custom_span(name=name, data=data):
             tasks = TaskManager(revised_plan, server=server)
-            score = await tasks.run()
-            if score.score == "pass":
+            eval = await tasks.run()
+            if eval.score >= 0.8:
                 break
         revised_plan = await plan_task(plan_id, re_planner, user_input)
     return revised_plan
@@ -153,8 +156,8 @@ async def fetch_output(plan: Plan, server: MCPServerSse) -> str:
         ValueError: If no result is found in memory.
     """
 
-    step = get_last_agent_step("Editor", plan.steps)
-    value = await get_result(plan.id, str(step.id), step.agent, server)
+    step = get_step("Editor", plan.steps, is_last=True)
+    value = await get_result(plan.id, str(step.id), step.agent_name, server)
     return value if isinstance(value, str) else json.dumps(value, indent=2)
 
 
@@ -166,16 +169,14 @@ async def save_result(plan: Plan, server: MCPServerSse) -> None:
         plan (Plan): The plan object with the steps for the task.
         server (MCPServerSse): The MCP server to fetch the output from.
     """
-
-    RESULTS_STORAGE_PATH.mkdir(parents=True, exist_ok=True)
-    file_path = RESULTS_STORAGE_PATH / f"{plan.id}.txt"
+    file_path = Path(__file__).parents[1] / f"tmp/results/{plan.id}.txt"
     if file_path.exists():
         log_info(f"File {file_path} already exists. Overwriting...")
 
     result = await fetch_output(plan, server)
     with open(file_path, "w", encoding="utf-8") as f:
         f.write(result)
-    log_done(f"Result saved to {file_path}")
+    log_done(f"Result saved to {file_path.name} in tmp folder")
 
 
 async def run_agent(
@@ -223,16 +224,20 @@ async def run_agent(
             await save_result(revised_plan, server)
 
 
-async def run(task_config_file: str, revisions: int = 3) -> None:
+async def run(
+    task_config_file: str, revisions: int = 3, trace_id: str | None = None
+) -> None:
     """
     Main function to run the agent with the provided task configuration.
 
     Args:
         task_config_file (str): The path to the task configuration file.
         revisions (int): The number of revisions to perform if needed.
+        trace_id (str | None): The trace ID for the run. If None, a new
+        trace ID will be generated.
     """
     config = load_task_config(task_config_file)
     user_input = config["goal"]
     context_input = config["context"]
-    await run_agent(user_input, context_input, revisions)
+    await run_agent(user_input, context_input, revisions, trace_id)
     log_done("Task completed successfully.")

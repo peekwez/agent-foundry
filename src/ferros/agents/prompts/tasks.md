@@ -16,7 +16,7 @@ any qualifiers or prefixes.
 
 #### Reading Data
 
-1. **get_plan**: Use it to fetch the plan from the shared state
+1. **get_plan**: Use it to fetch the plan from the shared state.
 2. **get_blackboard**: Use it to fetch the blackboard data from shared state.
 3. **get_context**: Use it to fetch context data from the file store.
 4. **get_result**: Use it to fetch results data from other agents.

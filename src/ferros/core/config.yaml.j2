@@ -1,0 +1,29 @@
+provider:
+  api_key: {{ env.MODEL_API_KEY }}
+  base_url: {{ env.MODEL_BASE_URL }}
+
+redis:
+    host: {{env.REDIS_HOST | default('127.0.0.1')}}
+    port: {{env.REDIS_PORT | default(6379)}}
+    db: {{env.REDIS_DB | default(1)}}
+    password: {{env.REDIS_PASSWORD | default('') }}
+
+etcd:
+    host: {{ env.ETCD_HOST | default('127.0.0.1') }}
+    port: {{ env.ETCD_PORT | default(2379) }}
+    username: {{ env.ETCD_USERNAME | default('') }}
+    password: {{ env.ETCD_PASSWORD | default('') }}
+
+context:
+    name: 'Context Builder'
+    model: {{ env.CONTEXT_BUILDER_MODEL }}
+    model_settings:
+        temperature: {{ env.CONTEXT_BUILDER_TEMPERATURE }}
+        max_tokens: {{ env.CONTEXT_BUILDER_MAX_TOKENS }}
+
+planner:
+    name: 'Planner'
+    model: {{ env.PLANNER_MODEL }}
+    model_settings:
+        temperature: {{ env.PLANNER_TEMPERATURE }}
+        max_tokens: {{ env.PLANNER_MAX_TOKENS }}
