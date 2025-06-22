@@ -28,23 +28,27 @@ class ProviderSettings(BaseSettings):
 
 
 class RedisSettings(BaseSettings):
-    host: str = Field(default="127.0.0.1", description="Host for the Redis server.")
-    port: int = Field(default=6379, description="Port for the Redis server.")
-    db: int = Field(default=0, description="Database number for Redis.")
-    password: str | None = Field(
+    redis_host: str = Field(
+        default="127.0.0.1", description="Host for the Redis server."
+    )
+    redis_port: int = Field(default=6379, description="Port for the Redis server.")
+    redis_db: int = Field(default=0, description="Database number for Redis.")
+    redis_username: str | None = Field(
+        default=None, description="Username for the Redis server."
+    )
+    redis_password: str | None = Field(
         default=None, description="Password for the Redis server."
     )
 
 
-class Etcd3Settings(BaseSettings):
-    host: str = Field(default="127.0.0.1", description="Host for the etcd server.")
-    port: int = Field(default=2379, description="Port for the etcd server.")
-    username: str | None = Field(
-        default=None, description="Username for the etcd server."
+class BlackboardSettings(RedisSettings):
+    mcp_server: str = Field(
+        default="http://localhost:8000/sse", description="MCP server URL."
     )
-    password: str | None = Field(
-        default=None, description="Password for the etcd server."
-    )
+
+
+class RegistrySettings(RedisSettings):
+    pass
 
 
 class AgentSettings(BaseSettings):
@@ -65,17 +69,20 @@ class Settings(BaseSettings):
     provider: ProviderSettings = Field(
         ..., description="Configuration for the model provider."
     )
-    redis: dict[str, RedisSettings] = Field(
-        default={"blackboard": RedisSettings(), "registry": RedisSettings()},
-        description="Configuration for the Redis server.",
+    blackboard: BlackboardSettings = Field(
+        default=BlackboardSettings(),
+        description="Configuration for the blackboard service.",
     )
-    # etcd: Etcd3Settings = Field(
-    #     default=Etcd3Settings(),
-    #     description="Configuration for the etcd3 server.",
-    # )
+    registry: RegistrySettings = Field(
+        default=RegistrySettings(),
+        description="Configuration for the registry service.",
+    )
     context: AgentSettings = Field(
         ..., description="Configuration for the context builder agent."
     )
     planner: AgentSettings = Field(
         ..., description="Configuration for the planner agent."
+    )
+    evaluator: AgentSettings = Field(
+        ..., description="Configuration for the evaluator agent."
     )

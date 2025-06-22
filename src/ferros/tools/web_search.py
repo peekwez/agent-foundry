@@ -5,6 +5,7 @@ import urllib3
 from agents import FunctionTool, RunContextWrapper
 from pydantic import BaseModel, Field
 from tavily import TavilyClient  # type: ignore
+from tenacity import retry, stop_after_attempt, wait_random_exponential
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -31,6 +32,11 @@ class SearchResults(BaseModel):
     )
 
 
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_random_exponential(multiplier=1, max=15),
+    reraise=True,
+)
 def search_web(query: str, num_results: int) -> str:
     """
     Perform a web search using the provided query and number of results.

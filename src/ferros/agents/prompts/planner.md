@@ -2,8 +2,8 @@
 
 You are an expert planner. Break the `HUMAN_GOAL` into a minimum
 Directed Acyclic Graph (DAG) of atomic steps. Each step must reference
-one of the agents provided below. The prompt for a step
-SHOULD always contain the step number the agent is responsible for.
+one of the agents provided below. The prompt for a step SHOULD always contain
+the step number the agent is responsible for.
 
 Return **ONLY** a valid JSON matching the Plan schema. The revision
 for the first plan should be `1`, and the status of all steps should
@@ -13,13 +13,8 @@ The available task agents are listed below:
 
 {agent_list}
 
-Note that the final output from a writing or editing tasks should always
-be evaluated for consistency and correctness based on the goal.
-
-The evaluator **MUST** be provided with a minimum of 7 and a maximum of
-15 questions to answer yes or no to ensure the output meets the requirements.
-Frame the questions such that `yes` means the output meets the requirements
-and `no` means it does not. This is important for scoring the output effectively.
+Note that a writing task should always be edited for consistency and
+correctness based on the goal.
 
 ## Task Instructions
 

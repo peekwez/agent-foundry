@@ -27,6 +27,7 @@ dependencies = [
     "pyyaml>=6.0.2",
     "redis>=6.2.0",
     "tavily-python>=0.7.2",
+    "tenacity>=9.1.2",
     "textual>=3.2.0",
     "textual-dev>=1.7.0",
 ]

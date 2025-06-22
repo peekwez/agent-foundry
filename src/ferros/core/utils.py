@@ -14,7 +14,7 @@ from rich.console import Console
 
 from ferros.core.parsers import load_config_file
 from ferros.core.tracing import configure_tracing
-from ferros.models.settings import Settings
+from ferros.models.settings import RedisSettings, Settings
 
 FILE_SCHEMES = (
     "file://",
@@ -166,6 +166,28 @@ def log_done(message: str) -> None:
     console.print(f"[green]✔[/green] {message}")
 
 
+def init_redis_client(settings: RedisSettings) -> Redis:
+    """
+    Initialize the Redis client for shared memory.
+
+    Args:
+        name (str): The name of the Redis client. Defaults to "registry".
+    Returns:
+        None
+    """
+
+    if "windows.net" in settings.redis_host:
+        cred = DefaultAzureCredential()
+        token = cred.get_token("https://redis.azure.com/.default")
+        settings.redis_password = token.token
+    return Redis(
+        host=settings.redis_host,
+        port=settings.redis_port,
+        username=settings.redis_username,
+        password=settings.redis_password,
+    )
+
+
 def get_redis_client(name: str = "registry") -> Redis:
     """
     Get the Redis client for shared memory.
@@ -178,14 +200,10 @@ def get_redis_client(name: str = "registry") -> Redis:
 
     global redis_clients
     if redis_clients is None:
-        settings = get_settings()
-        redis_clients = {}
-        for name, setting in settings.redis.items():
-            if "windows.net" in setting.host:
-                cred = DefaultAzureCredential()
-                token = cred.get_token("https://redis.azure.com/.default")
-                setting.password = token.token
-            redis_clients[name] = Redis(**setting.model_dump())
+        redis_clients = {
+            "registry": init_redis_client(get_settings().registry),
+            "blackboard": init_redis_client(get_settings().blackboard),
+        }
     try:
         return redis_clients[name]
     except KeyError as e:

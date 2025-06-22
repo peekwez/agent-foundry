@@ -85,6 +85,10 @@ class AgentSDKConfig(BaseModel):
         default="You are a helpful assistant.",
         description="Instructions for the OpenAI model.",
     )
+    output_type: AgentOutputSchemaBase | None = Field(
+        default=None,
+        description="The output type for the agent.",
+    )
 
     @property
     def key(self) -> str:
@@ -163,10 +167,16 @@ class OpenAISDKConfig(AgentSDKConfig):
         Returns:
             Agent: An instance of the Agent class configured with this SDK settings.
         """
+
+        path = Path(__file__).parents[1] / "agents" / "prompts" / "tasks.md"
+        template = path.read_text()
+        instructions = template.format(
+            name=f"{self.name.capitalize()} Agent", instructions=self.instructions
+        )
         return Agent(
             name=self.name.capitalize(),
             model=self.model,
-            instructions=self.instructions,
+            instructions=instructions,
             tools=tools or [],
             mcp_servers=mcp_servers or [],
             tool_use_behavior="run_llm_again",
@@ -174,7 +184,9 @@ class OpenAISDKConfig(AgentSDKConfig):
             output_type=output_type,
         )
 
-    async def run_agent(self, agent: Agent, input: str, max_turns: int = 60) -> None:
+    async def run_agent(
+        self, agent: Agent, input: str, max_turns: int = 60, retry: int = 3
+    ) -> None:
         """
         Run the agent using the provided runner.
 
@@ -183,8 +195,21 @@ class OpenAISDKConfig(AgentSDKConfig):
             input (str): The input to be provided to the agent.
             max_turns (int): The maximum number of turns to run the agent.
         """
-
-        await Runner.run(agent, input=input, max_turns=max_turns)
+        for attempt in range(retry):
+            try:
+                print(f"Running agent: {agent.name}, Attempt: {attempt + 1}")
+                # Use the Runner to execute the agent with the provided input
+                result = await Runner.run(agent, input=input, max_turns=max_turns)
+                if result:
+                    break  # Exit loop if successful
+            except Exception as e:
+                print(f"Error occurred while running agent: {e}")
+                if attempt == retry - 1:
+                    raise
+            else:
+                raise RuntimeError(
+                    f"Failed to run agent {agent.name} after {retry} attempts."
+                )
 
 
 class GoogleADKConfig(AgentSDKConfig):

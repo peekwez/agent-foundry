@@ -1,10 +1,11 @@
+import json
 import pathlib
 from typing import Any
 
-from agents import Agent, RunContextWrapper
+from agents import Agent, RunContextWrapper, Runner
 from agents.mcp import MCPServer
 
-from ferros.core.utils import get_settings
+from ferros.core.utils import get_settings, log_done
 from ferros.models.context import Context
 
 
@@ -45,3 +46,39 @@ def get_builder(
         tools=tools or [],
         mcp_servers=mcp_servers or [],
     )
+
+
+async def build_context(
+    plan_id: str, context_input: str | list[str] | dict[str, str], server: MCPServer
+) -> Context:
+    """
+    Build context for the task using the context builder agent.
+
+    Args:
+        plan_id (str): The unique identifier for the plan.
+        agent (Agent): The context builder agent.
+        context_input (str | list | dict): Input for the context builder.
+
+    Returns:
+        Context: The built context object with the descriptions of the context items.
+
+    Raises:
+        ValueError: If the context input type is invalid.
+    """
+    if isinstance(context_input, str):
+        context_input = context_input.strip()
+    elif isinstance(context_input, dict):
+        context_input = json.dumps(context_input, indent=2)
+    elif isinstance(context_input, list):  # type: ignore[unreachable]
+        context_input = "\n".join(context_input)
+    else:
+        raise ValueError("Invalid context input type")
+
+    input = f"{context_input}\n\nUse the UUID: {plan_id} as the plan id."
+    agent = get_builder(mcp_servers=[server])
+    result = await Runner.run(agent, input=input, max_turns=20)
+    context: Context = result.final_output
+
+    size = len(context.contexts)
+    log_done(f"Context created with {size} items...")
+    return context

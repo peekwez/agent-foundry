@@ -1,18 +1,15 @@
 import asyncio
 
-from agents.mcp import MCPServerSse
+from agents.mcp import MCPServer
 
-from ferros.agents.utils import get_step
 from ferros.core.utils import log_done
 from ferros.models.agents import SDKType
-from ferros.models.evaluate import Evaluations
 from ferros.models.plan import Plan, PlanStep
 from ferros.runtime.openai import run as run_openai_agent
-from ferros.tools.mcps import get_result
 
 
 class TaskManager:
-    def __init__(self, plan: Plan, server: MCPServerSse):
+    def __init__(self, plan: Plan, server: MCPServer):
         self.plan = plan
         self.server = server
         self.dependencies = {s.id: set(s.depends_on) for s in plan.steps}
@@ -50,26 +47,7 @@ class TaskManager:
         log_done(message)
         return step.id
 
-    async def _get_evals(self) -> Evaluations:
-        # After all steps are done get the evaluation scores
-        # and update the plan status if needed
-        # sleep for a while to ensure the score is available
-        await asyncio.sleep(5)
-        step: PlanStep = get_step(agent_name="Evaluator", steps=self.plan.steps)
-        data = await get_result(
-            self.plan.id, str(step.id), step.agent_name, self.server
-        )
-        score = None
-        if isinstance(data, str):
-            score = Evaluations.model_validate_json(data)
-        elif isinstance(data, dict):
-            score = Evaluations.model_validate(data)
-
-        if score is None:
-            raise ValueError("No score found in memory")
-        return score
-
-    async def run(self) -> Evaluations:
+    async def run(self) -> None:
         pending = {s.id: s for s in self.plan.steps if s.status == "pending"}
         while pending:
             ready = [
@@ -81,6 +59,3 @@ class TaskManager:
             done = await asyncio.gather(*(self._run_step(s) for s in ready))
             for sid in done:
                 pending.pop(sid, None)
-
-        # Get the evaluations
-        return await self._get_evals()

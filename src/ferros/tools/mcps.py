@@ -1,8 +1,10 @@
 import json
-import os
 from typing import Any
 
-from agents.mcp import MCPServerSse, MCPServerSseParams
+from agents.mcp import MCPServer, MCPServerSseParams
+from tenacity import retry, stop_after_attempt, wait_random_exponential
+
+from ferros.core.utils import get_settings
 
 
 def get_params() -> MCPServerSseParams:
@@ -12,16 +14,22 @@ def get_params() -> MCPServerSseParams:
     Returns:
         MCPServerSseParams: The parameters for the MCP server.
     """
+    settings = get_settings()
     return MCPServerSseParams(
-        url=os.getenv("MCP_BLACKBOARD_SERVER", "http://localhost:8000/sse"),
+        url=settings.blackboard.mcp_server,
         headers={},
         timeout=180,
         sse_read_timeout=180,
     )
 
 
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_random_exponential(multiplier=1, max=15),
+    reraise=True,
+)
 async def get_result(
-    plan_id: str, step_id: str, agent_name: str, server: MCPServerSse
+    plan_id: str, step_id: str, agent_name: str, server: MCPServer
 ) -> Any:
     """
     Get the result from the blackboard using the provided plan ID, step ID,
@@ -35,14 +43,8 @@ async def get_result(
     Returns:
         str: The result read from the server.
     """
-    data = await server.call_tool(
-        tool_name="get_result",
-        arguments={
-            "plan_id": plan_id,
-            "step_id": str(step_id),
-            "agent_name": agent_name,
-        },
-    )
+    args = {"plan_id": plan_id, "step_id": str(step_id), "agent_name": agent_name}
+    data = await server.call_tool(tool_name="get_result", arguments=args)
     if not data:
         raise ValueError("No result found in memory")
     return json.loads(data.content[0].text)  # type: ignore

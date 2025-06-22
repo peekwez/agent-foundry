@@ -24,5 +24,5 @@ async def run(plan_id: str, step: PlanStep, mcp_servers: list[MCPServer]) -> Non
     if step.agent_name.lower().find("researcher") > -1:
         tools = [web_search_tool]
     agent = config.create_agent(tools=tools, mcp_servers=mcp_servers)
-    input = f"{step.prompt} \n The plan id is '{plan_id}'"
+    input = f"{step.prompt} \n\n The plan id is '{plan_id}'"
     await config.run_agent(agent, input=input, max_turns=60)
