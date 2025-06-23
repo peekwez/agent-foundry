@@ -2,6 +2,14 @@ provider:
   api_key: {{ env.MODEL_API_KEY }}
   base_url: {{ env.MODEL_BASE_URL }}
 
+logging:
+    enabled: {{ env.LOGGING_ENABLED | default(true) }}
+    level: {{ env.LOGGING_LEVEL | default('info') }}
+    filename: {{ env.LOG_FILE | default('logs/agent-foundry/app.log') }}
+    rotation: {{ env.LOG_ROTATION | default('100 MB') }}
+    retention: {{ env.LOG_RETENTION | default('30 days') }}
+    compression: {{ env.LOG_COMPRESSION | default('zip') }}
+
 blackboard:
     redis_host: {{env.BLACKBOARD_REDIS_HOST | default('127.0.0.1')}}
     redis_port: {{env.BLACKBOARD_REDIS_PORT | default(6379)}}
@@ -30,3 +38,10 @@ planner:
     model_settings:
         temperature: {{ env.PLANNER_TEMPERATURE }}
         max_tokens: {{ env.PLANNER_MAX_TOKENS }}
+
+evaluator:
+    name: 'Evaluator'
+    model: {{ env.EVALUATOR_MODEL }}
+    model_settings:
+        temperature: {{ env.EVALUATOR_TEMPERATURE }}
+        max_tokens: {{ env.EVALUATOR_MAX_TOKENS }}

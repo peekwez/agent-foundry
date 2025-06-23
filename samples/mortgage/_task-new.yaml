@@ -23,7 +23,7 @@ goal: |
   Include any additional recommendations.
 
 context:
-  - s3://agent-foundry/mortgage/loe_sample.png
-  - s3://agent-foundry/mortgage/ps_sample.png
-  - s3://agent-foundry/mortgage/credit_report.pdf
+  - s3://agent-foundry-datastore/mortgage/loe_sample.png
+  - s3://agent-foundry-datastore/mortgage/ps_sample.png
+  - s3://agent-foundry-datastore/mortgage/credit_report.pdf
   - https://laws-lois.justice.gc.ca/eng/regulations/SOR-2012-281/page-1.html

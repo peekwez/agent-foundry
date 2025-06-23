@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Any
 
 import yaml  # type: ignore
 from agents import (  # set_trace_processors,; set_tracing_disabled,
@@ -15,6 +14,7 @@ from rich.console import Console
 from ferros.core.parsers import load_config_file
 from ferros.core.tracing import configure_tracing
 from ferros.models.settings import RedisSettings, Settings
+from ferros.models.task import TaskConfig
 
 FILE_SCHEMES = (
     "file://",
@@ -113,7 +113,7 @@ def load_settings(env_file: str) -> None:
     configure_model_client()
 
 
-def load_task_config(file_path: str) -> Any:
+def load_task_config(file_path: str) -> TaskConfig:
     """
     Load the task configuration from a YAML file.
 
@@ -121,7 +121,7 @@ def load_task_config(file_path: str) -> Any:
         file_path (str): The path to the YAML file.
 
     Returns:
-        dict: The loaded task configuration.
+        TaskConfig: The loaded task configuration.
     """
     with open(file_path, encoding="utf-8") as f:
         config = yaml.safe_load(f)
@@ -143,7 +143,7 @@ def load_task_config(file_path: str) -> Any:
                 f"Invalid context item: {item}. Must start with one of {SCHEMES}."
             )
 
-    return config
+    return TaskConfig.model_validate(config)
 
 
 def log_info(message: str) -> None:
@@ -185,6 +185,7 @@ def init_redis_client(settings: RedisSettings) -> Redis:
         port=settings.redis_port,
         username=settings.redis_username,
         password=settings.redis_password,
+        decode_responses=settings.redis_decode_responses,
     )
 
 

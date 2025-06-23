@@ -102,7 +102,6 @@ def add_agent(sdk: str, config_file: str, env_file: str) -> None:
     from ferros.models.agents import SDKType
 
     load_settings(env_file)
-
     register_agent(SDKType(sdk), config_file)
 
 
@@ -118,6 +117,9 @@ def list_agents(env_file: str) -> None:
     """
     List all registered agents.
 
+    Args:
+        env_file (str): The path to the environment file.
+
     Returns:
         None
     """
@@ -125,11 +127,85 @@ def list_agents(env_file: str) -> None:
     from ferros.core.utils import load_settings
 
     load_settings(env_file)
-
     registry = get_registry()
     configs = registry.list()
     for config in configs.agents:
         print(f"Name: {config.name}, SDK: {config.sdk}, Version: {config.version}")
+
+
+@cli.command()
+@click.option(
+    "-e",
+    "--env-file",
+    type=click.Path(exists=False),
+    default=".env",
+    help="Path to the environment file.",
+)
+@click.option(
+    "-h",
+    "--host",
+    type=str,
+    default="localhost",
+    help="Host for the API server.",
+)
+@click.option("-p", "--port", type=int, default=5000, help="Port for the API server.")
+def api(env_file: str, host: str, port: int) -> None:
+    """
+    List all registered agents.
+
+    Args:
+        env_file (str): The path to the environment file.
+        host (str): The host for the API server.
+        port (int): The port for the API server.
+
+    Returns:
+        None
+    """
+    from ferros.app import run_app
+    from ferros.core.utils import load_settings
+
+    load_settings(env_file)
+    run_app(host=host, port=port)
+
+
+@cli.command()
+@click.option(
+    "-e",
+    "--env-file",
+    type=click.Path(exists=False),
+    default=".env",
+    help="Path to the environment file.",
+)
+@click.option(
+    "-h",
+    "--host",
+    type=str,
+    default="localhost",
+    help="Host for the API server.",
+)
+@click.option("-p", "--port", type=int, default=5050, help="Port for the API server.")
+def worker(env_file: str, host: str, port: int) -> None:
+    """
+    Start the worker to process tasks from the queue.
+
+    Args:
+        env_file (str): The path to the environment file.
+        host (str): The host for the health check server.
+        port (int): The port for the health check server.
+
+    Returns:
+        None
+    """
+    import threading
+
+    from ferros.core.utils import load_settings
+    from ferros.messaging.consumer import consume_tasks, start_health_check_server
+
+    load_settings(env_file)
+    threading.Thread(
+        target=start_health_check_server, args=(host, port), daemon=True
+    ).start()
+    asyncio.run(consume_tasks())
 
 
 if __name__ == "__main__":

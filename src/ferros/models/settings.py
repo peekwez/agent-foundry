@@ -1,3 +1,5 @@
+from typing import Literal
+
 from agents import ModelSettings
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -39,6 +41,9 @@ class RedisSettings(BaseSettings):
     redis_password: str | None = Field(
         default=None, description="Password for the Redis server."
     )
+    redis_decode_responses: bool = Field(
+        default=True, description="Whether to decode Redis responses as strings."
+    )
 
 
 class BlackboardSettings(RedisSettings):
@@ -65,9 +70,26 @@ class AgentSettings(BaseSettings):
     )
 
 
+class LoggingSettings(BaseSettings):
+    enabled: bool = Field(default=True, description="Enable or disable logging.")
+    level: Literal["debug", "info", "warning", "error", "critical"] = Field(
+        default="info", description="Logging level."
+    )
+    filename: str = Field(
+        default="logs/agent-foundry/app.log", description="Name of the log file."
+    )
+    rotation: str = Field(default="100 MB", description="Log file rotation size.")
+    retention: str = Field(default="30 days", description="Log file retention period.")
+    compression: str = Field(default="zip", description="Log file compression format.")
+
+
 class Settings(BaseSettings):
     provider: ProviderSettings = Field(
         ..., description="Configuration for the model provider."
+    )
+    logging: LoggingSettings = Field(
+        default=LoggingSettings(),
+        description="Configuration for logging settings.",
     )
     blackboard: BlackboardSettings = Field(
         default=BlackboardSettings(),

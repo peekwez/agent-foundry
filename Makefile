@@ -26,6 +26,9 @@ mypy:
 tests:
 	uv run pytest
 
+build:
+	docker build -t agent-foundry/python312 .
+
 coverage:
 	uv run coverage run -m pytest
 	uv run coverage xml -o coverage.xml
@@ -87,7 +90,13 @@ init-blackboard:
 	docker compose up -d blackboard-mcp
 
 init-registry:
-	docker compose stop agent-registry || true
-	docker compose rm -f agent-registry || true
+	docker compose stop agent-foundry-registry || true
+	docker compose rm -f agent-foundry-registry || true
 	docker volume rm -f agent-foundry_agent_registry_data || true
-	docker compose up -d agent-registry
+	docker compose up -d agent-foundry-registry
+
+init-foundry:
+	docker compose stop agent-foundry-api agent-foundry-worker || true
+	docker compose rm -f agent-foundry-api agent-foundry-worker || true
+	docker volume rm -f agent-foundry_agent_foundry_data || true
+	docker compose up -d agent-foundry-api agent-foundry-worker

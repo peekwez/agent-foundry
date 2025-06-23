@@ -1,7 +1,54 @@
 services:
-  agent-registry:
+  agent-foundry-api:
+    image: agent-foundry/python312:latest
+    container_name: agent-foundry-api
+    restart: always
+    env_file: .env.agent
+    command: >
+      ferros api --host=0.0.0.0 --port=5000
+    ports:
+      - 127.0.0.1:5000:5000
+    depends_on:
+      agent-foundry-registry:
+        condition: service_healthy
+      agent-foundry-worker:
+        condition: service_healthy
+      blackboard-mcp:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "sh",
+          "-c",
+          'curl -s http://localhost:5000/health | grep -q ''"status":"healthy"'' || exit 1',
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  agent-foundry-worker:
+    image: agent-foundry/python312:latest
+    container_name: agent-foundry-worker
+    restart: always
+    env_file: .env.agent
+    command: >
+      ferros worker
+    ports:
+      - 127.0.0.1:5050:5050
+    depends_on:
+      agent-foundry-registry:
+        condition: service_healthy
+    healthcheck:
+      test:
+        ["CMD", "sh", "-c", "curl -s http://localhost:5050/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  agent-foundry-registry:
     image: redis:7
-    container_name: agent-registry
+    container_name: agent-foundry-registry
     restart: always
     command: >
       --appendonly yes --appendfilename agent-registry.aof
@@ -16,19 +63,59 @@ services:
       retries: 10
 
   blackboard-mcp:
-    image: mcp/blackboard
+    image: blackboard-mcp/python313
     container_name: blackboard-mcp
     env_file: .env.state
     ports:
       - 127.0.0.1:8000:8000
     depends_on:
-      - blackboard-mem
+      blackboard-mem:
+        condition: service_healthy
+      blackboard-vol:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "sh",
+          "-c",
+          'curl -s http://localhost:8000/health | grep -q ''"status":"healthy"'' || exit 1',
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   blackboard-mem:
     image: redis/redis-stack:latest
     container_name: blackboard-mem
     ports:
       - 127.0.0.1:6381:6379
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 10s
+      retries: 10
+
+  blackboard-vol:
+    image: minio/minio
+    container_name: blackboard-vol
+    restart: always
+    entrypoint: sh
+    command: -c 'mkdir -p /data/agent-foundry-datastore /data/blackboard-datastore && minio server --address ":9000" --console-address ":9001" /data'
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-miniosecret} # CHANGEME
+    ports:
+      - 9092:9000
+      - 127.0.0.1:9093:9001
+    volumes:
+      - blackboard_vol_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 1s
+      timeout: 5s
+      retries: 5
+      start_period: 1s
 
   langfuse-worker:
     image: langfuse/langfuse-worker:3
@@ -198,4 +285,6 @@ volumes:
   langfuse_minio_data:
     driver: local
   agent_registry_data:
+    driver: local
+  blackboard_vol_data:
     driver: local
