@@ -5,6 +5,7 @@ from typing import Any
 from agents import Agent, RunContextWrapper, Runner
 from agents.mcp import MCPServer
 
+from ferros.core.logging import get_logger
 from ferros.core.utils import get_settings, log_done
 from ferros.models.context import Context
 
@@ -44,7 +45,7 @@ def get_builder(
         tool_use_behavior="run_llm_again",
         output_type=Context,
         tools=tools or [],
-        mcp_servers=mcp_servers or [],
+        # mcp_servers=mcp_servers or [],
     )
 
 
@@ -65,6 +66,7 @@ async def build_context(
     Raises:
         ValueError: If the context input type is invalid.
     """
+    logger = get_logger(__name__)
     if isinstance(context_input, str):
         context_input = context_input.strip()
     elif isinstance(context_input, dict):
@@ -80,5 +82,6 @@ async def build_context(
     context: Context = result.final_output
 
     size = len(context.contexts)
+    logger.info(f"Context created with {size} items...")
     log_done(f"Context created with {size} items...")
     return context

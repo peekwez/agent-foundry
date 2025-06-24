@@ -1,10 +1,9 @@
+from __future__ import annotations
+
 from pathlib import Path
 
 import yaml  # type: ignore
-from agents import (  # set_trace_processors,; set_tracing_disabled,
-    set_default_openai_api,
-    set_default_openai_client,
-)
+from agents import set_default_openai_api, set_default_openai_client
 from azure.identity import DefaultAzureCredential
 from dotenv import load_dotenv
 from openai import AsyncOpenAI, Timeout
@@ -32,10 +31,7 @@ FILE_SCHEMES = (
     "github://",
 )
 
-URL_SCHEMES = (
-    "http://",
-    "https://",
-)
+URL_SCHEMES = ("http://", "https://")
 
 
 SCHEMES = FILE_SCHEMES + URL_SCHEMES
@@ -133,11 +129,11 @@ def load_task_config(file_path: str) -> TaskConfig:
         )
 
     # Validate the 'context' field
-    if "context" not in config or not isinstance(config["context"], list):
+    if "contexts" not in config or not isinstance(config["contexts"], list):
         raise ValueError("The configuration must contain a 'context' field as a list.")
 
     # Validate each item in the 'context' list
-    for item in config["context"]:
+    for item in config["contexts"]:
         if not any(item.startswith(scheme) for scheme in SCHEMES):
             raise ValueError(
                 f"Invalid context item: {item}. Must start with one of {SCHEMES}."

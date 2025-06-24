@@ -6,6 +6,7 @@ from agents import Agent, RunContextWrapper, Runner, RunResult
 from agents.mcp import MCPServer
 from tenacity import retry, stop_after_attempt, wait_random_exponential
 
+from ferros.core.logging import get_logger
 from ferros.core.utils import get_settings
 from ferros.models.agents import AgentsConfig
 from ferros.models.evaluation import EvaluationResult, EvaluationResults
@@ -82,6 +83,7 @@ async def evaluate_result(
     Returns:
         EvaluationResults: The results of the evaluation.
     """
+    logger = get_logger(__name__)
     user_input = (
         f"\nThe latest writer or editor result to be evaluated is "
         f"for plan: {plan.id}, revision: {revision}"
@@ -104,21 +106,33 @@ async def evaluate_result(
     ]
 
     if not results:
+        logger.error("No evaluation runs were executed.")
         raise ValueError("Results evaluation failed")
 
     if len(failures) == checks:
+        logger.error(
+            f"All {checks} evaluation runs failed. Please check the evaluation results."
+        )
         raise ValueError(
             "All evaluation runs failed. Please check the evaluation results."
         )
 
     if len(success) < MINIMUM_EVALUATION_CHECKS:
+        logger.error(
+            f"Not enough successful evaluation runs found: {len(success)}. "
+            f"Expected at least {MINIMUM_EVALUATION_CHECKS} successful runs."
+        )
         raise ValueError(
             f"Not enough successful evaluation runs found: {len(success)}. "
             f"Expected at least 3 successful runs."
         )
 
     if not success:
+        logger.error("No successful evaluation runs found.")
         raise ValueError("No successful evaluation runs found.")
 
     evaluations: EvaluationResults = EvaluationResults(results=success)
+    logger.info(
+        f"Evaluation completed with {len(evaluations.results)} successful checks."
+    )
     return evaluations

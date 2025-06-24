@@ -3,6 +3,7 @@ from typing import Any
 
 from rich.console import Console
 
+from ferros.core.logging import get_logger
 from ferros.core.utils import get_redis_client
 from ferros.messaging.constants import STREAM_LAST_ID, TASK_UPDATE_STREAM
 
@@ -24,6 +25,8 @@ async def stream_task_updates(
     last_id: str = STREAM_LAST_ID
     redis = get_redis_client(name="blackboard")
     stream_name = f"{TASK_UPDATE_STREAM}:{task_id}"
+    logger = get_logger(__name__)
+    logger.info(f"Starting to poll stream: {stream_name}")
 
     try:
         while True:
@@ -34,4 +37,4 @@ async def stream_task_updates(
                         yield data  # type:ignore
                     last_id = message_id  # type:ignore
     except KeyboardInterrupt:
-        print("Stream polling stopped by user.")
+        logger.info("Stream polling stopped by user.")

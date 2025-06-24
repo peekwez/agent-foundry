@@ -6,6 +6,7 @@ from agents.mcp import MCPServer
 from ferros.agents.evaluator import evaluate_result
 from ferros.agents.manager import TaskManager
 from ferros.agents.planner import plan_task
+from ferros.core.logging import get_logger
 from ferros.models.plan import Plan
 
 
@@ -35,6 +36,8 @@ async def execute_plan(
         "The evaluation did not pass. Please revise the "
         "plan based on the feedback: \n\n"
     )
+    logger = get_logger(__name__)
+    logger.info(f"Executing plan {plan_id} with goal: {plan.goal}")
     for revision in range(1, revisions + 1):
         name = f"Plan Executor - Rev {revision}"
         data: dict[str, Any] = {"Revision": revision, "Plan Id": plan_id}
@@ -45,5 +48,6 @@ async def execute_plan(
             if evals.passed:
                 break
             user_input = f"Plan goal:\n{plan.goal}\n\n{revision_prefix}{evals.feedback}"
+        logger.info(f"Revision {revision} of plan {plan_id} completed.")
         _plan = await plan_task(plan_id, revision, user_input, server)
     return _plan

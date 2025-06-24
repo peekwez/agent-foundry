@@ -2,6 +2,7 @@ import asyncio
 
 from agents.mcp import MCPServer
 
+from ferros.core.logging import get_logger
 from ferros.core.utils import log_done
 from ferros.models.agents import SDKType
 from ferros.models.plan import Plan, PlanStep
@@ -14,6 +15,7 @@ class TaskManager:
         self.server = server
         self.dependencies = {s.id: set(s.depends_on) for s in plan.steps}
         self.completed = {s.id for s in plan.steps if s.status == "completed"}
+        self.logger = get_logger(__name__)
 
     async def _run_step(self, step: PlanStep) -> int:
         # run the step
@@ -44,6 +46,7 @@ class TaskManager:
         # update the completed steps
         self.plan.steps[step.id - 1].status = "completed"
         self.completed.add(step.id)
+        self.logger.info(message)
         log_done(message)
         return step.id
 
@@ -54,6 +57,9 @@ class TaskManager:
                 s for s in pending.values() if self.dependencies[s.id] <= self.completed
             ]
             if not ready:
+                self.logger.error(
+                    "No steps are ready to run. Circular dependency detected!"
+                )
                 raise RuntimeError("Circular dependency detected!")
 
             done = await asyncio.gather(*(self._run_step(s) for s in ready))

@@ -3,7 +3,12 @@ services:
     image: agent-foundry/python312:latest
     container_name: agent-foundry-api
     restart: always
-    env_file: .env.agent
+    env_file: .env.agent.docker
+    environment:
+      LOG_ROOT_DIR: /app/logs/agent-foundry-api
+    volumes:
+      - ./logs/agent-foundry-api:/app/logs/agent-foundry-api
+      - agent_foundry_api_logs:/app/logs/agent-foundry-api
     command: >
       ferros api --host=0.0.0.0 --port=5000
     ports:
@@ -31,7 +36,12 @@ services:
     image: agent-foundry/python312:latest
     container_name: agent-foundry-worker
     restart: always
-    env_file: .env.agent
+    env_file: .env.agent.docker
+    environment:
+      LOG_ROOT_DIR: /app/logs/agent-foundry-worker
+    volumes:
+      - ./logs/agent-foundry-worker:/app/logs/agent-foundry-worker
+      - ./logs/agent-foundry_worker_logs:/app/logs/agent-foundry-worker
     command: >
       ferros worker
     ports:
@@ -65,7 +75,12 @@ services:
   blackboard-mcp:
     image: blackboard-mcp/python313
     container_name: blackboard-mcp
-    env_file: .env.state
+    env_file: .env.blackboard
+    environment:
+      LOG_ROOT_DIR: /app/logs/blackboard-mcp
+    volumes:
+      - ./logs/blackboard-mcp:/app/logs/blackboard-mcp
+      - blackboard_mcp_logs:/app/logs/blackboard-mcp
     ports:
       - 127.0.0.1:8000:8000
     depends_on:
@@ -287,4 +302,10 @@ volumes:
   agent_registry_data:
     driver: local
   blackboard_vol_data:
+    driver: local
+  blackboard_mcp_logs:
+    driver: local
+  agent_foundry_api_logs:
+    driver: local
+  agent_foundry_worker_logs:
     driver: local

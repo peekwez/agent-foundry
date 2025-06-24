@@ -3,9 +3,9 @@ provider:
   base_url: {{ env.MODEL_BASE_URL }}
 
 logging:
-    enabled: {{ env.LOGGING_ENABLED | default(true) }}
-    level: {{ env.LOGGING_LEVEL | default('info') }}
-    filename: {{ env.LOG_FILE | default('logs/agent-foundry/app.log') }}
+    enabled: {{ env.LOG_ENABLED | default(true) }}
+    level: {{ env.LOG_LEVEL | default('info') }}
+    root_dir : {{ env.LOG_ROOT_DIR | default('logs/agent-foundry') }}
     rotation: {{ env.LOG_ROTATION | default('100 MB') }}
     retention: {{ env.LOG_RETENTION | default('30 days') }}
     compression: {{ env.LOG_COMPRESSION | default('zip') }}

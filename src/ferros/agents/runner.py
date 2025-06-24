@@ -1,5 +1,5 @@
 from agents import gen_trace_id, trace
-from agents.mcp import MCPServerSse
+from agents.mcp import MCPServerStreamableHttp
 
 from ferros.agents.builder import build_context
 from ferros.agents.executor import execute_plan
@@ -21,28 +21,32 @@ async def run_agent(
         user_input (str): The user input for the task.
         context_input (str | list | dict | None): The context input for the task.
         revisions (int): The number of revisions to perform if needed.
+        trace_id (str | None): The trace ID for the run. If None, a new trace ID
+            will be generated.
     """
 
     trace_id = gen_trace_id() if trace_id is None else trace_id
     guid = trace_id.split("_")[-1]
-
-    async with MCPServerSse(
-        params=get_params(),
+    params = get_params()
+    async with MCPServerStreamableHttp(
+        params=params,
         cache_tools_list=True,
-        name="MCP Blackboard Server",
+        name="Blackboard MCP Server",
         client_session_timeout_seconds=180,
     ) as server:
+        # server = None
         with trace(
             workflow_name=f"Knowledge Worker: {guid.upper()[:8]}", trace_id=trace_id
         ):
             # build context
             if context_input:
                 await build_context(guid, context_input, server)
+            return
 
             # plan the task
             plan = await plan_task(guid, 1, user_input, server)
 
-            # execute the plan, replan if needed and revise output
+            # execute the plan, replan, and revise output if required
             revised_plan = await execute_plan(guid, plan, server, revisions)
 
             # save the result to a file

@@ -47,9 +47,7 @@ class RedisSettings(BaseSettings):
 
 
 class BlackboardSettings(RedisSettings):
-    mcp_server: str = Field(
-        default="http://localhost:8000/sse", description="MCP server URL."
-    )
+    server: str = Field(default="http://localhost:8000", description="MCP server URL.")
 
 
 class RegistrySettings(RedisSettings):
@@ -75,8 +73,8 @@ class LoggingSettings(BaseSettings):
     level: Literal["debug", "info", "warning", "error", "critical"] = Field(
         default="info", description="Logging level."
     )
-    filename: str = Field(
-        default="logs/agent-foundry/app.log", description="Name of the log file."
+    root_dir: str = Field(
+        default="logs/agent-foundry", description="Root directory for log files."
     )
     rotation: str = Field(default="100 MB", description="Log file rotation size.")
     retention: str = Field(default="30 days", description="Log file retention period.")

@@ -24,12 +24,12 @@ based on the goal.
 
 ## Task Instructions
 
-1. You must fetch the existing plan from memory using the `plan_id` to know what steps are
+1. Use `GetPlan` to fetch the existing plan from memory using the `plan_id` to know what steps are
    available and what dependencies exist.
 
-2. You must fetch the blackboard data using the `plan_id` to know what context data and
+2. Use `GetBlackboard` to fetch the blackboard data using the `plan_id` to know what context data and
    results are available to help with the re-planning.
 
-3. You must save the new full plan in the memory using the key `plan id` and the `save_plan`
+3. You must save the new full plan in the memory using the key `plan id` and the `SavePlan`
    function. This overwrites the existing plan in memory. The value should be a JSON string
    matching the Plan schema.

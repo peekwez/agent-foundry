@@ -1,25 +1,26 @@
 import json
+from datetime import timedelta
 from typing import Any
 
-from agents.mcp import MCPServer, MCPServerSseParams
+from agents.mcp import MCPServer, MCPServerStreamableHttpParams
 from tenacity import retry, stop_after_attempt, wait_random_exponential
 
 from ferros.core.utils import get_settings
 
 
-def get_params() -> MCPServerSseParams:
+def get_params() -> MCPServerStreamableHttpParams:
     """
     Get the parameters for the MCP server.
 
     Returns:
-        MCPServerSseParams: The parameters for the MCP server.
+        MCPServerStreamableHttpParams: The parameters for the MCP server.
     """
     settings = get_settings()
-    return MCPServerSseParams(
-        url=settings.blackboard.mcp_server,
+    return MCPServerStreamableHttpParams(
+        url=f"{settings.blackboard.server}/blackboard/mcp",
         headers={},
-        timeout=180,
-        sse_read_timeout=180,
+        timeout=timedelta(seconds=180),
+        sse_read_timeout=timedelta(seconds=180),
     )
 
 

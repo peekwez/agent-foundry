@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 import http.server
 import socketserver
@@ -39,7 +41,7 @@ def start_health_check_server(host: str = "0.0.0.0", port: int = HEALTH_PORT) ->
     Args:
         port (int): The port on which the health check server will listen.
     """
-    logger = get_logger("ferros.messaging.consumer")
+    logger = get_logger(__name__)
     logger.info(f"Starting health check server on {host}:{port}")
     with socketserver.TCPServer((host, port), HealthCheckHandler) as httpd:
         logger.info(f"Health check server started at http://{host}:{port}/health")
@@ -54,7 +56,8 @@ async def consume_tasks() -> None:
     using the `run_agent` function. Each message is expected to be a JSON
     """
 
-    logger = get_logger("ferros.messaging.consumer")
+    logger = get_logger(__name__)
+
     redis = get_redis_client()
     try:
         redis.xgroup_create(

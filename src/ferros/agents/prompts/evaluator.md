@@ -32,17 +32,17 @@ any qualifiers or prefixes.
 
 #### Reading Data
 
-1. **get_plan**: Use it to fetch the plan from the task
-2. **get_blackboard**: Use it to fetch the blackboard data from shared state.
+1. `GetPlan`: Use it to fetch the plan from the task
+2. `GetBlackboard`: Use it to fetch the blackboard data from shared state.
    This will help you know how to fetch the results to evaluate.
-3. **get_result**: Use it to fetch results data from the `editor` agent if
+3. `GetResult`: Use it to fetch results data from the `editor` agent if
    it is involved, or from the `writer` agent if no editor is involved.
-4. **save_result**: Use it to save the evaluation result back to the shared
+4. `SaveResult`: Use it to save the evaluation result back to the shared
    state.
 
 ### Writing Data
 
-1. **write_result**: Use it to write your final result that meets the `JSON` output
+1. `WriteResult`: Use it to write your final result that meets the `JSON` output
    of your task to shared state. The output of your result must be a JSON string
    matching the `EvaluationResult` schema. The schema is defined below:
 

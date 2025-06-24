@@ -2,7 +2,7 @@ goal: |
   Create a one-page executive brief on the economic impact of Canada’s
   2024-2025 carbon tax changes. Cite at least three sources.
 
-context:
+contexts:
   - file:///mnt/shared/data/research/us_symbols.csv
   - file:///mnt/shared/data/research/org_chart.png
   - file:///mnt/shared/data/research/first_then.pdf

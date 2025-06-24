@@ -1,5 +1,6 @@
 from tenacity import retry, stop_after_attempt, wait_random_exponential
 
+from ferros.core.logging import get_logger
 from ferros.core.utils import get_redis_client
 from ferros.messaging.constants import STREAM_NAME
 from ferros.models.task import TaskConfig
@@ -20,6 +21,7 @@ async def publish_task(task: TaskConfig) -> None:
     Returns:
         None
     """
-
+    logger = get_logger(__name__)
     redis = get_redis_client()
     redis.xadd(name=STREAM_NAME, fields={"data": task.model_dump_json()})
+    logger.info(f"Task {task.trace_id} published to stream {STREAM_NAME}.")

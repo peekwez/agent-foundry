@@ -22,8 +22,5 @@ goal: |
   client name, mortgage amount, down payment, and monthly payment amount.
   Include any additional recommendations.
 
-context:
+contexts:
   - s3://agent-foundry-datastore/mortgage/loe_sample.png
-  - s3://agent-foundry-datastore/mortgage/ps_sample.png
-  - s3://agent-foundry-datastore/mortgage/credit_report.pdf
-  - https://laws-lois.justice.gc.ca/eng/regulations/SOR-2012-281/page-1.html

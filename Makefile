@@ -1,7 +1,12 @@
 OPTION := mortgage
 TASK_FILE := $$(pwd)/samples/mortgage/_task-new.yaml
-ENV_FILE := $$(pwd)/.env.agent
+ENV_FILE := $$(pwd)/.env.agent.local
 REVISIONS := 3
+AGENT_NAMES:= researcher extractor analyzer writer editor
+
+define add-agent-template
+	uv run ferros add-agent -c config/$(1).yaml.j2 -e .env.agent.local -s openai
+endef
 
 .PHONY: sync run format lint mypy tests coverage run link-path link-data test-context task-run
 
@@ -66,37 +71,39 @@ down:
 	docker compose down --remove-orphans
 
 up: down
-	docker compose up -d
+	docker compose --env-file .env.compose up -d
 
 clone-blackboard:
 	git submodule add git@github.com:pwc-ca-adv-genai-factory/mcp-blackboard.git
 	git submodule update --init --recursive
 
 add-agents:
-	uv run ferros add-agent -c config/researcher.yaml.j2 -e .env.agent -s openai
-	uv run ferros add-agent -c config/extractor.yaml.j2 -e .env.agent -s openai
-	uv run ferros add-agent -c config/analyzer.yaml.j2 -e .env.agent -s openai
-	uv run ferros add-agent -c config/writer.yaml.j2 -e .env.agent -s openai
-	uv run ferros add-agent -c config/editor.yaml.j2 -e .env.agent -s openai
-	uv run ferros add-agent -c config/evaluator.yaml.j2 -e .env.agent -s openai
+	for agent in $(AGENT_NAMES); do \
+		$(call add-agent-template,$$agent); \
+	done
 
 list-agents:
-	uv run ferros list-agents -e .env.agent
+	uv run ferros list-agents -e .env.agent.local
 
-init-blackboard:
+# monitor:
+# 	docker compose stop redis minio clickhouse langfuse-worker langfuse-web --env-file .env.compose || true
+# 	docker compose rm -f redis minio clickhouse langfuse-worker langfuse-web --env-file .env.compose || true
+# 	docker compose up -d redis minio clickhouse langfuse-worker langfuse-web --env-file .env.compose
+
+blackboard:
 	docker compose stop blackboard-mcp || true
 	docker compose rm -f blackboard-mcp || true
-	cd mcp-blackboard && make build
-	docker compose up -d blackboard-mcp
+	docker build -t blackboard-mcp/python313 -f mcp-blackboard/Dockerfile mcp-blackboard
+	docker compose --env-file .env.compose up -d blackboard-mcp
 
-init-registry:
+registry:
 	docker compose stop agent-foundry-registry || true
-	docker compose rm -f agent-foundry-registry || true
+	docker compose rm -f agent-foundry-registry|| true
 	docker volume rm -f agent-foundry_agent_registry_data || true
-	docker compose up -d agent-foundry-registry
+	docker compose --env-file .env.compose up -d agent-foundry-registry
 
-init-foundry:
+foundry:
 	docker compose stop agent-foundry-api agent-foundry-worker || true
 	docker compose rm -f agent-foundry-api agent-foundry-worker || true
-	docker volume rm -f agent-foundry_agent_foundry_data || true
-	docker compose up -d agent-foundry-api agent-foundry-worker
+	docker build -t agent-foundry/python312 .
+	docker compose --env-file .env.compose up -d agent-foundry-api agent-foundry-worker

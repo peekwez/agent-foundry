@@ -7,7 +7,7 @@ media based on the contents.
 
 ## Task Instructions
 
-Fetch each context item using the `read_context` tool and generate a description
+Fetch each context item using the `GetContext` tool and generate a description
 based on the contents. You should not include irrelevant information or details
 that are not necessary for completing the task. Then save the description for
-each item using the `save_context_description` tool.
+each item using the `SaveContextDescription` tool.

@@ -5,6 +5,7 @@ from agents import Agent, RunContextWrapper, Runner
 from agents.mcp import MCPServer
 
 from ferros.agents.factory import get_agent_configs
+from ferros.core.logging import get_logger
 from ferros.core.utils import get_settings, log_done
 from ferros.models.agents import AgentsConfig
 from ferros.models.plan import Plan
@@ -90,6 +91,7 @@ async def plan_task(
     Returns:
         Plan: The generated plan object with the steps for the task.
     """
+    logger = get_logger(__name__)
     input = f"{user_input}\n\nUse the UUID: {plan_id} as the plan id."
     context = get_agent_configs()
     agent = get_planner(
@@ -97,6 +99,7 @@ async def plan_task(
     )
     result = await Runner.run(agent, input=input, max_turns=20, context=context)
     plan: Plan = result.final_output
+    logger.info(f"Task plan created with {len(plan.steps)} steps...")
 
     size = len(plan.steps)
     if agent.name == "Planner":

@@ -23,7 +23,7 @@ goal: |
   should also include a summary of the analysis and any recommendations for
   the client.
 
-context:
+contexts:
   - file:///mnt/shared/data/mortgage/loe_sample.png
   - file:///mnt/shared/data/mortgage/ps_sample.png
   - file:///mnt/shared/data/mortgage/credit_report.pdf

@@ -19,6 +19,6 @@ correctness based on the goal.
 ## Task Instructions
 
 You MUST save the full plan in the memory using the key `plan id`
-and `save_plan` function. The value should be a JSON string matching
+and `SavePlan` function. The value should be a JSON string matching
 the Plan schema. This is important for the agents to be able to
 reference the plan later.
