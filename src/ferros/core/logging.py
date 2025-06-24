@@ -10,7 +10,7 @@ from ferros.core.utils import get_settings
 loggers: dict[str, loguru.Logger] = {}
 
 
-def get_logger(name: str, file_prefix: str = "app.log") -> loguru.Logger:
+def get_logger(name: str, file_prefix: str = "app") -> loguru.Logger:
     """
     Get a logger instance with the specified settings.
 
