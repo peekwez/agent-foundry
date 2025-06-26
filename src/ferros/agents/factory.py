@@ -1,4 +1,5 @@
 from ferros.agents.registry import get_registry
+from ferros.core.logging import get_logger
 from ferros.models.agents import SDK_CLASS_MAP, AgentsConfig, AgentSDKConfig, SDKType
 
 
@@ -26,11 +27,14 @@ def register_agent(sdk: SDKType, file_path: str) -> None:
     Returns:
         None
     """
+    logger = get_logger(__name__)
     registry = get_registry()
     cls: type[AgentSDKConfig] = SDK_CLASS_MAP.get(sdk, AgentSDKConfig)
     config: AgentSDKConfig = cls.from_yaml(file_path)
     registry.add(config)
-    print(f"Registered {config.name} agent for {sdk} SDK and version {config.version}.")
+    logger.info(
+        f"Registered {config.name} agent for {sdk} SDK and version {config.version}."
+    )
 
 
 def get_agent_configs() -> AgentsConfig:

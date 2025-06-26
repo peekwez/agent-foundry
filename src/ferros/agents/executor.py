@@ -39,12 +39,17 @@ async def execute_plan(
     logger = get_logger(__name__)
     logger.info(f"Executing plan {plan_id} with goal: {plan.goal}")
     for revision in range(1, revisions + 1):
-        name = f"Plan Executor - Rev {revision}"
+        name = f"Plan Execution - Rev {revision}"
         data: dict[str, Any] = {"Revision": revision, "Plan Id": plan_id}
         with custom_span(name=name, data=data):
             manager = TaskManager(_plan, server=server)
             await manager.run()
             evals = await evaluate_result(_plan, revision, server)
+            message = (
+                f"Revision {revision} of plan {plan_id} completed with score: "
+                f"{evals.score:0.2f}%"
+            )
+            logger.info(message)
             if evals.passed:
                 break
             user_input = f"Plan goal:\n{plan.goal}\n\n{revision_prefix}{evals.feedback}"

@@ -6,7 +6,7 @@ from agents.mcp import MCPServer
 
 from ferros.agents.factory import get_agent_configs
 from ferros.core.logging import get_logger
-from ferros.core.utils import get_settings, log_done
+from ferros.core.utils import get_settings
 from ferros.models.agents import AgentsConfig
 from ferros.models.plan import Plan
 from ferros.tools.web_search import web_search_tool
@@ -97,14 +97,14 @@ async def plan_task(
     agent = get_planner(
         tools=[web_search_tool], mcp_servers=[server], replanner=revision > 1
     )
+
     result = await Runner.run(agent, input=input, max_turns=20, context=context)
     plan: Plan = result.final_output
-    logger.info(f"Task plan created with {len(plan.steps)} steps...")
 
     size = len(plan.steps)
     if agent.name == "Planner":
-        log_done(f"Task plan created with {size} steps...")
+        logger.info(f"✔ Task plan created with {size} steps...")
     elif agent.name == "Re-Planner":
         new_size = len([s for s in plan.steps if s.status == "pending"])
-        log_done(f"Task re-planning created with {new_size} steps...")
+        logger.info(f"✔ Task re-planning created with {new_size} steps...")
     return plan

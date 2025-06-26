@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import http.server
 import socketserver
 
@@ -68,8 +67,9 @@ async def consume_tasks() -> None:
 
     consumer_name = codename(separator="-")
     logger.info(f"Starting task consumer with name: {consumer_name}")
-    while True:
-        try:
+
+    try:
+        while True:
             response = redis.xreadgroup(
                 groupname=GROUP_NAME,
                 consumername=consumer_name,
@@ -79,18 +79,25 @@ async def consume_tasks() -> None:
             )
             if response:
                 _, messages = response[0]  # type: ignore
-                for message_id, data in messages:  # type: ignore
-                    config = TaskConfig.model_validate_json(data)  # type: ignore
-                    asyncio.run(
-                        run_agent(
+                for message_id, message in messages:  # type: ignore
+                    config = TaskConfig.model_validate_json(message["data"])  # type: ignore
+                    try:
+                        logger.info(f"Processing task with ID: {config.trace_id}")
+                        await run_agent(
                             user_input=config.goal,
                             context_input=config.context_strings,
                             revisions=config.revisions,
                             trace_id=config.trace_id,
                         )
-                    )
+
+                    except Exception as e:
+                        logger.error(
+                            f"Error processing task with ID {config.trace_id}: {e}"
+                        )
                     redis.xack(STREAM_NAME, GROUP_NAME, message_id)  # type: ignore
                     logger.info(f"Processed task with ID: {config.trace_id}")
-                # Process the task data here
-        except Exception as e:
-            logger.error(f"Error processing task: {e}")
+                    # Process the task data here
+    except Exception as e:
+        logger.error(f"Error processing task: {e}")
+    except KeyboardInterrupt:
+        logger.info("Task consumer stopped by user.")

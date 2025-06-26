@@ -1,7 +1,7 @@
 OPTION := mortgage
-TASK_FILE := $$(pwd)/samples/mortgage/_task-new.yaml
+TASK_FILE := $$(pwd)/samples/mortgage/_task-new.old.yaml
 ENV_FILE := $$(pwd)/.env.agent.local
-REVISIONS := 3
+REVISIONS := 1
 AGENT_NAMES:= researcher extractor analyzer writer editor
 
 define add-agent-template
@@ -39,9 +39,6 @@ coverage:
 	uv run coverage xml -o coverage.xml
 	uv run coverage report -m
 
-run:
-	cd src && uv run -m main
-
 link-path:
 	mkdir -p /tmp/genai/data || true
 	mkdir -p /tmp/genai/cache || true
@@ -55,11 +52,17 @@ link-data: link-path
 
 	ls -l /tmp/genai/data
 
-task-run:
+run:
 	uv run ferros run-task \
 		-c ${TASK_FILE} \
 		-e ${ENV_FILE} \
 		-r ${REVISIONS}
+
+api:
+	uv run ferros api \
+		-e ${ENV_FILE} \
+		--host localhost \
+		--port 8888
 
 install:
 	uv pip install -e .

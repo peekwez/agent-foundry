@@ -3,7 +3,6 @@ import asyncio
 from agents.mcp import MCPServer
 
 from ferros.core.logging import get_logger
-from ferros.core.utils import log_done
 from ferros.models.agents import SDKType
 from ferros.models.plan import Plan, PlanStep
 from ferros.runtime.openai import run as run_openai_agent
@@ -17,7 +16,7 @@ class TaskManager:
         self.completed = {s.id for s in plan.steps if s.status == "completed"}
         self.logger = get_logger(__name__)
 
-    async def _run_step(self, step: PlanStep) -> int:
+    async def run_step(self, step: PlanStep) -> int:
         # run the step
         message = (
             f"{step.agent_name.capitalize()} has completed the step "
@@ -47,7 +46,6 @@ class TaskManager:
         self.plan.steps[step.id - 1].status = "completed"
         self.completed.add(step.id)
         self.logger.info(message)
-        log_done(message)
         return step.id
 
     async def run(self) -> None:
@@ -62,6 +60,6 @@ class TaskManager:
                 )
                 raise RuntimeError("Circular dependency detected!")
 
-            done = await asyncio.gather(*(self._run_step(s) for s in ready))
+            done = await asyncio.gather(*(self.run_step(s) for s in ready))
             for sid in done:
                 pending.pop(sid, None)

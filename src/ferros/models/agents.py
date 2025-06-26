@@ -9,6 +9,7 @@ from agents import Agent, AgentOutputSchemaBase, ModelSettings, Runner
 from agents.mcp import MCPServer
 from pydantic import BaseModel, ConfigDict, Field
 
+from ferros.core.logging import get_logger
 from ferros.core.parsers import load_config_file
 
 REGISTRY_PREFIX = "agents:config"
@@ -195,15 +196,16 @@ class OpenAISDKConfig(AgentSDKConfig):
             input (str): The input to be provided to the agent.
             max_turns (int): The maximum number of turns to run the agent.
         """
+        logger = get_logger(__name__)
         for attempt in range(retry):
             try:
-                print(f"Running agent: {agent.name}, Attempt: {attempt + 1}")
+                logger.info(f"Running agent: {agent.name}, Attempt: {attempt + 1}")
                 # Use the Runner to execute the agent with the provided input
                 result = await Runner.run(agent, input=input, max_turns=max_turns)
                 if result:
                     break  # Exit loop if successful
             except Exception as e:
-                print(f"Error occurred while running agent: {e}")
+                logger.error(f"Error occurred while running agent: {e}")
                 if attempt == retry - 1:
                     raise
             else:

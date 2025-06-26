@@ -1,14 +1,26 @@
 import json
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 from datetime import timedelta
-from typing import Any
+from typing import Any, Literal
 
-from agents.mcp import MCPServer, MCPServerStreamableHttpParams
+from agents.mcp import (
+    MCPServer,
+    MCPServerSse,
+    MCPServerSseParams,
+    MCPServerStreamableHttp,
+    MCPServerStreamableHttpParams,
+)
 from tenacity import retry, stop_after_attempt, wait_random_exponential
 
 from ferros.core.utils import get_settings
 
+RESULT_TOOL_NAME = "GetResult"
 
-def get_params() -> MCPServerStreamableHttpParams:
+
+def get_params(
+    transport: Literal["streamable-http", "sse"] = "streamable-http",
+) -> MCPServerStreamableHttpParams | MCPServerSseParams:
     """
     Get the parameters for the MCP server.
 
@@ -16,12 +28,40 @@ def get_params() -> MCPServerStreamableHttpParams:
         MCPServerStreamableHttpParams: The parameters for the MCP server.
     """
     settings = get_settings()
-    return MCPServerStreamableHttpParams(
-        url=f"{settings.blackboard.server}/blackboard/mcp",
-        headers={},
-        timeout=timedelta(seconds=180),
-        sse_read_timeout=timedelta(seconds=180),
-    )
+    if transport == "sse":
+        return MCPServerSseParams(
+            url=f"{settings.blackboard.mcp_server}/sse",
+            headers={},
+            timeout=180,
+            sse_read_timeout=180,
+        )
+    elif transport == "streamable-http":
+        return MCPServerStreamableHttpParams(
+            url=f"{settings.blackboard.mcp_server}/blackboard/mcp",
+            headers={},
+            timeout=timedelta(seconds=180),
+            sse_read_timeout=timedelta(seconds=180),
+        )
+
+
+# Import your server classes
+
+
+@asynccontextmanager
+async def get_mcp_server(
+    transport: Literal["streamable-http", "sse"],
+    **kwargs: Any,
+) -> AsyncGenerator[MCPServerSse, MCPServerStreamableHttp]:
+    if transport == "streamable-http":
+        server_cls = MCPServerStreamableHttp
+    elif transport == "sse":
+        server_cls = MCPServerSse
+    else:
+        raise ValueError(f"Unknown transport: {transport}")
+
+    params = get_params(transport=transport)
+    async with server_cls(params=params, **kwargs) as server:  # type: ignore
+        yield server  # type: ignore
 
 
 @retry(
@@ -45,7 +85,7 @@ async def get_result(
         str: The result read from the server.
     """
     args = {"plan_id": plan_id, "step_id": str(step_id), "agent_name": agent_name}
-    data = await server.call_tool(tool_name="get_result", arguments=args)
+    data = await server.call_tool(tool_name=RESULT_TOOL_NAME, arguments=args)
     if not data:
         raise ValueError("No result found in memory")
     return json.loads(data.content[0].text)  # type: ignore

@@ -1,5 +1,8 @@
+from pathlib import Path
+
 from ferros.agents.runner import run_agent
-from ferros.core.utils import load_task_config, log_done
+from ferros.core.logging import get_logger
+from ferros.core.utils import load_task_config
 
 
 async def run(
@@ -14,10 +17,20 @@ async def run(
         trace_id (str | None): The trace ID for the run. If None, a new
             trace ID will be generated.
     """
+    logger = get_logger(__name__)
+    _file = Path(task_config_file)
+    if not _file.exists():
+        logger.error(f"Task configuration file '{task_config_file}' does not exist.")
+        raise FileNotFoundError(
+            f"Task configuration file '{task_config_file}' does not exist."
+        )
+
     config = load_task_config(task_config_file)
+    logger.info(f"Config loaded from {_file.name}.")
     config.revisions = revisions
     config.trace_id = trace_id or config.trace_id
+    logger.info(f"Running agent with trace ID: {config.trace_id}.")
     await run_agent(
         config.goal, config.context_strings, config.revisions, config.trace_id
     )
-    log_done("Task completed successfully.")
+    logger.info("✔ Task completed successfully.")

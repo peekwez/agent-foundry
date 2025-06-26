@@ -4,6 +4,7 @@ import mimetypes
 import httpx
 from tenacity import retry, stop_after_attempt, wait_random_exponential
 
+from ferros.core.logging import get_logger
 from ferros.core.utils import get_settings
 
 
@@ -41,31 +42,13 @@ async def save_file(data: bytes, trace_id: str, file_name: str) -> dict[str, str
         file_name (str): The name of the file to save in the S3 bucket.
     """
     settings = get_settings()
+    logger = get_logger(__name__)
     encode_data = encode_base64(data, file_name)
     file_path = f"{trace_id}/{file_name}"
     payload = {"file_path": file_path, "data": encode_data}
-    url = f"{settings.blackboard.server}/save-file"
+    url = f"{settings.blackboard.mcp_server}/save-file"
     headers = {"Content-Type": "application/json"}
     response = httpx.put(url, headers=headers, json=payload)
     response.raise_for_status()  # Raise an error for bad responses
+    logger.info(f"File {file_name} saved successfully with trace ID {trace_id}.")
     return response.json()  # Return the JSON response if needed
-
-
-if __name__ == "__main__":
-    # Example usage
-    import asyncio
-    from pathlib import Path
-
-    from ferros.core.utils import load_settings
-
-    env_file = Path(__file__).parents[3] / ".env.agent.local"
-
-    if not env_file.exists():
-        raise FileNotFoundError(f"Environment file not found: {env_file}")
-    settings = load_settings(str(env_file))
-    trace_id = "1234567890abcdef"
-    file_name = "example.txt"
-    data = b"Hello, world!"
-
-    result = asyncio.run(save_file(data, trace_id, file_name))
-    print(result)  # Output the result of the save operation

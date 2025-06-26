@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 import loguru
@@ -35,6 +36,12 @@ def get_logger(name: str, file_prefix: str = "app") -> loguru.Logger:
         rotation=settings.logging.rotation,
         retention=settings.logging.retention,
         compression=settings.logging.compression,
+        level=settings.logging.level.upper(),
+        colorize=True,
+        catch=True,
+    )
+    logger.add(
+        sys.stdout, level=settings.logging.level.upper(), colorize=True, catch=True
     )
     logger.bind(name=name)
     loggers[name] = logger

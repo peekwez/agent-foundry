@@ -41,7 +41,7 @@ services:
       LOG_ROOT_DIR: /app/logs/agent-foundry-worker
     volumes:
       - ./logs/agent-foundry-worker:/app/logs/agent-foundry-worker
-      - agent-foundry_worker_logs:/app/logs/agent-foundry-worker
+      - agent_foundry_worker_logs:/app/logs/agent-foundry-worker
     command: >
       ferros worker
     ports:

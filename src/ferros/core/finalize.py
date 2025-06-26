@@ -2,9 +2,10 @@ import json
 from pathlib import Path
 
 from agents.mcp import MCPServer
+from rich.layout import Layout
 
 from ferros.agents.utils import get_step
-from ferros.core.utils import log_done, log_info
+from ferros.core.logging import get_logger
 from ferros.models.plan import Plan
 from ferros.tools.mcps import get_result
 
@@ -39,11 +40,17 @@ async def save_result(plan: Plan, server: MCPServer) -> None:
         plan (Plan): The plan object with the steps for the task.
         server (MCPServerSse): The MCP server to fetch the output from.
     """
-    file_path = Path(__file__).parents[2] / f"tmp/results/{plan.id}.txt"
+    logger = get_logger(__name__)
+    file_path = Path(__file__).parents[3] / f"tmp/results/{plan.id}.txt"
     if file_path.exists():
-        log_info(f"File {file_path} already exists. Overwriting...")
-
+        logger.info(f"File {file_path} already exists. Overwriting...")
     result = await fetch_output(plan, server)
     with open(file_path, "w", encoding="utf-8") as f:
         f.write(result)
-    log_done(f"Result saved to {file_path.name} in tmp folder")
+    logger.info(f"Result saved to {file_path.name} in tmp folder")
+    layout = Layout()
+    layout.split_column(
+        Layout(name="Task Goal", size=3), Layout(name="Result", size=10)
+    )
+    layout["Goal"].update(plan.goal)
+    layout["Result"].update(result)

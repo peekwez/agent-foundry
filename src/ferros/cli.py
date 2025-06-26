@@ -53,7 +53,6 @@ def run_task(task_config_file: str, env_file: str, revisions: int) -> None:
     from ferros.main import run
 
     load_settings(env_file)
-
     asyncio.run(run(task_config_file, revisions))
 
 
@@ -124,13 +123,17 @@ def list_agents(env_file: str) -> None:
         None
     """
     from ferros.agents.registry import get_registry
+    from ferros.core.logging import get_logger
     from ferros.core.utils import load_settings
 
     load_settings(env_file)
+    logger = get_logger(__name__)
     registry = get_registry()
     configs = registry.list()
     for config in configs.agents:
-        print(f"Name: {config.name}, SDK: {config.sdk}, Version: {config.version}")
+        logger.info(
+            f"Name: {config.name}, SDK: {config.sdk}, Version: {config.version}"
+        )
 
 
 @cli.command()
@@ -199,13 +202,45 @@ def worker(env_file: str, host: str, port: int) -> None:
     import threading
 
     from ferros.core.utils import load_settings
-    from ferros.messaging.consumer import consume_tasks, start_health_check_server
+    from ferros.messaging.consumer import consume_tasks
+    from ferros.messaging.consumer import start_health_check_server as health_server
 
     load_settings(env_file)
-    threading.Thread(
-        target=start_health_check_server, args=(host, port), daemon=True
-    ).start()
+    threading.Thread(target=health_server, args=(host, port), daemon=True).start()
     asyncio.run(consume_tasks())
+
+
+@cli.command()
+@click.option(
+    "-t",
+    "--task-id",
+    type=str,
+    required=True,
+    help="The ID of the task to stream.",
+)
+@click.option(
+    "-e",
+    "--env-file",
+    type=click.Path(exists=False),
+    default=".env",
+    help="Path to the environment file.",
+)
+def stream(task_id: str, env_file: str = ".env") -> None:
+    """
+    Stream the task results.
+
+    Args:
+        task_id (str): The ID of the task to stream.
+        env_file (str): The path to the environment file.
+
+    Returns:
+        None
+    """
+    from ferros.core.utils import load_settings
+    from ferros.messaging.streamer import stream_updates
+
+    load_settings(env_file)
+    asyncio.run(stream_updates(task_id))
 
 
 if __name__ == "__main__":

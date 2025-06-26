@@ -142,26 +142,6 @@ def load_task_config(file_path: str) -> TaskConfig:
     return TaskConfig.model_validate(config)
 
 
-def log_info(message: str) -> None:
-    """
-    Log a message to the console.
-
-    Args:
-        message (str): The message to log.
-    """
-    console.print({message})
-
-
-def log_done(message: str) -> None:
-    """
-    Log a completion message to the console.
-
-    Args:
-        message (str): The message to log.
-    """
-    console.print(f"[green]✔[/green] {message}")
-
-
 def init_redis_client(settings: RedisSettings) -> Redis:
     """
     Initialize the Redis client for shared memory.
@@ -182,6 +162,7 @@ def init_redis_client(settings: RedisSettings) -> Redis:
         username=settings.redis_username,
         password=settings.redis_password,
         decode_responses=settings.redis_decode_responses,
+        db=settings.redis_db or 0,
     )
 
 

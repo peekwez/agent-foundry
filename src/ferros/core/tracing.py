@@ -1,17 +1,18 @@
+import base64
 import os
 
+import logfire
+import nest_asyncio  # type: ignore
 from agents import set_trace_processors, set_tracing_disabled
 
 
-def configure_langfuse_tracing() -> None:
+def configure_langfuse() -> None:
     """
     Configure Langfuse tracing for the application.
 
     Returns:
         None
     """
-    import base64
-    import os
 
     _host = os.environ.get("LANGFUSE_HOST")
     _public_key = os.environ.get("LANGFUSE_PUBLIC_KEY")
@@ -24,60 +25,24 @@ def configure_langfuse_tracing() -> None:
     os.environ["OTEL_EXPORTER_OTLP_ENDPOINT"] = f"{_host}/api/public/otel"
     os.environ["OTEL_EXPORTER_OTLP_HEADERS"] = f"Authorization=Basic {_langfuse_auth}"
 
-    from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
-    from opentelemetry.sdk.trace import TracerProvider
-    from opentelemetry.sdk.trace.export import SimpleSpanProcessor
-
-    # Create a TracerProvider for OpenTelemetry
-    trace_provider = TracerProvider()
-
-    # Add a SimpleSpanProcessor with the OTLPSpanExporter to send traces
-    trace_provider.add_span_processor(SimpleSpanProcessor(OTLPSpanExporter()))
-
-    # Set the global default tracer provider
-    from opentelemetry import trace
-
-    trace.set_tracer_provider(trace_provider)
-    tracer = trace.get_tracer(__name__)  # type: ignore  # noqa: F841
-
-    import nest_asyncio  # type: ignore
-
     nest_asyncio.apply()  # type: ignore
-
-    import logfire
 
     logfire.configure(
         send_to_logfire=False,
         service_name="agent-foundry",
         console=False,
-        scrubbing=False,
+        # scrubbing=ScrubbingOptions(),
     )
     logfire.instrument_openai_agents()
 
 
-def configure_mlflow_tracing() -> None:
-    """
-    Configure MLflow tracing for the application.
-
-    Returns:
-        None
-    """
-    import mlflow
-
-    tracking_uri = os.environ.get("MLFLOW_TRACKING_URI", "http://0.0.0.0:5000")
-    mlflow.openai.autolog()  # type: ignore
-    mlflow.set_tracking_uri(tracking_uri)  # type: ignore
-    mlflow.set_experiment("OpenAI Agent")  # type: ignore
-
-
-def configure_logfire_tracing() -> None:
+def configure_logfire() -> None:
     """
     Configure Logfire tracing for the application.
 
     Returns:
         None
     """
-    import logfire
 
     logfire.configure(
         service_name="agent-foundry",
@@ -92,21 +57,10 @@ def configure_logfire_tracing() -> None:
     logfire.instrument_openai_agents()
 
 
-def configure_custom_tracing() -> None:
-    """
-    Configure custom tracing for the application.
-
-    Returns:
-        None
-    """
-    pass
-
-
 def configure_tracing(
     enable: bool = True,
+    *,
     use_logfire: bool = False,
-    use_mlflow: bool = False,
-    use_custom: bool = False,
     use_langfuse: bool = False,
 ) -> None:
     """
@@ -128,14 +82,8 @@ def configure_tracing(
     set_trace_processors([])
     set_tracing_disabled(False)
 
-    if use_mlflow:
-        configure_mlflow_tracing()
-
     if use_logfire:
-        configure_logfire_tracing()
-
-    if use_custom:
-        configure_custom_tracing()
+        configure_logfire()
 
     if use_langfuse:
-        configure_langfuse_tracing()
+        configure_langfuse()

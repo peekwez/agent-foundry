@@ -47,7 +47,9 @@ class RedisSettings(BaseSettings):
 
 
 class BlackboardSettings(RedisSettings):
-    server: str = Field(default="http://localhost:8000", description="MCP server URL.")
+    mcp_server: str = Field(
+        default="http://localhost:8000", description="MCP server URL."
+    )
 
 
 class RegistrySettings(RedisSettings):

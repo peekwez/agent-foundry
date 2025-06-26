@@ -1,11 +1,10 @@
 from agents import gen_trace_id, trace
-from agents.mcp import MCPServerStreamableHttp
 
 from ferros.agents.builder import build_context
 from ferros.agents.executor import execute_plan
 from ferros.agents.planner import plan_task
 from ferros.core.finalize import save_result
-from ferros.tools.mcps import get_params
+from ferros.tools.mcps import get_mcp_server
 
 
 async def run_agent(
@@ -27,21 +26,19 @@ async def run_agent(
 
     trace_id = gen_trace_id() if trace_id is None else trace_id
     guid = trace_id.split("_")[-1]
-    params = get_params()
-    async with MCPServerStreamableHttp(
-        params=params,
+
+    async with get_mcp_server(
+        "sse",
         cache_tools_list=True,
         name="Blackboard MCP Server",
         client_session_timeout_seconds=180,
     ) as server:
-        # server = None
         with trace(
             workflow_name=f"Knowledge Worker: {guid.upper()[:8]}", trace_id=trace_id
         ):
             # build context
             if context_input:
                 await build_context(guid, context_input, server)
-            return
 
             # plan the task
             plan = await plan_task(guid, 1, user_input, server)

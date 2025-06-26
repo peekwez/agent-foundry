@@ -1,10 +1,12 @@
 import uuid
 from typing import Annotated
 
+import arrow
 import uvicorn
 from fastapi import FastAPI, File, Form, UploadFile, WebSocket, WebSocketDisconnect
 from pydantic import AnyUrl
 
+from ferros.core.logging import get_logger
 from ferros.core.store import save_file
 from ferros.messaging.producer import publish_task
 from ferros.messaging.streamer import stream_task_updates
@@ -12,9 +14,14 @@ from ferros.models.task import TaskConfig
 
 app = FastAPI(
     title="Agent foundry API",
-    description="API for the Agent foundry, a knowledge worker agent.",
+    description=(
+        "API for the Agent foundry, a knowledge worker agent. "
+        "This API allows users to run tasks with the agent, "
+        "submit files, and receive updates on task progress."
+    ),
     version="0.1.0",
 )
+started = arrow.now("Canada/Eastern")
 
 
 @app.get("/")
@@ -25,7 +32,16 @@ def home() -> dict[str, str]:
     Returns:
         dict: A dictionary indicating the server is running.
     """
-    return {"message": "Welcome to the Agent foundry API!"}
+
+    return {
+        "name": app.title,
+        "description": app.description,
+        "message": "Welcome to the Agent foundry API!",
+        "timestamp": arrow.now("Canada/Eastern").format("MMM DD, YYYY HH:mm:ss"),
+        "version": app.version,
+        "uptime": started.humanize(locale="en"),
+        "status": "running",
+    }
 
 
 @app.get("/health")
@@ -39,7 +55,7 @@ async def health_check() -> dict[str, str]:
     return {"status": "healthy"}
 
 
-@app.post("/run-task-json")
+@app.post("/run-task/json")
 async def run_task(task_config: TaskConfig) -> dict[str, str]:
     """
     Run the agent with the provided input.
@@ -51,7 +67,7 @@ async def run_task(task_config: TaskConfig) -> dict[str, str]:
     return {"task_id": task_config.trace_id, "status": "task published"}
 
 
-@app.post("/run-task-form")
+@app.post("/run-task/form")
 async def run_task_form(
     goal: Annotated[str, Form],
     contexts: Annotated[list[AnyUrl], Form],
@@ -81,8 +97,9 @@ async def run_task_form(
     return {"task_id": task.trace_id, "status": "task published"}
 
 
-@app.websocket("/ws/task-updates")
+@app.websocket("/ws/run-task/updates")
 async def websocket_endpoint(websocket: WebSocket) -> None:
+    logger = get_logger(__name__)
     await websocket.accept()
     try:
         while True:
@@ -95,11 +112,11 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
                 continue
 
             async for update in stream_task_updates(task_id):
-                print(f"Update for task {task_id}: {update}")
-                await websocket.send_text(f"Update: {update}")
+                logger.info(f"Update for task {task_id}: {update}")
+                await websocket.send_json(update)
 
     except WebSocketDisconnect:
-        print("Client disconnected")
+        logger.info("Client disconnected from WebSocket.")
 
 
 def run_app(host: str = "0.0.0.0", port: int = 5000) -> None:
