@@ -6,7 +6,7 @@ FOUNDRY_IMAGE=agent-foundry/amd64
 BLACKBOARD_IMAGE=blackboard-mcp/amd64
 TAG:=latest
 
-all: build tag push clean-up
+deploy: build tag push clean-up
 
 clean-up:
 	$(call log_green, Cleaning up Docker containers and images...)
@@ -47,8 +47,8 @@ stop:
 
 up: pull
 	$(call log_green, Starting Docker containers with custom environment file...)
-	if [ ! -f .env.agent ] || [ ! -f .env.compose ] || [ ! -f .env.blackboard ]; then \
-		$(call log_green, "Error: Required environment files (.env.agent, .env.compose, .env.blackboard) not found."); \
+	@if [ ! -f .env.agent ] || [ ! -f .env.compose ] || [ ! -f .env.blackboard ]; then \
+		echo "Error: Required environment files (.env.agent, .env.compose, .env.blackboard) not found."; \
 		exit 1; \
 	fi
 	docker compose --env-file .env.compose up -d --remove-orphans
@@ -73,6 +73,7 @@ init: down
 	mkdir -p data/blackboard/logs || true
 	mkdir -p data/blackboard/backup || true
 	mkdir -p data/agent-foundry/worker/logs || true
+	mkdir -p data/agent-foundry/worker/data || true
 	mkdir -p data/agent-foundry/api/logs || true
 
 clean:

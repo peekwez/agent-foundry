@@ -1,11 +1,12 @@
 OPTION := mortgage
 TASK_FILE := $$(pwd)/samples/mortgage/_task-new.old.yaml
-ENV_FILE := $$(pwd)/.env.agent.local
+ENV_FILE := $$(pwd)/.env.agent.vm
+TASK_ID ?=
 REVISIONS := 1
 AGENT_NAMES:= researcher extractor analyzer writer editor
 
 define add-agent-template
-	uv run ferros add-agent -c config/$(1).yaml.j2 -e .env.agent.local -s openai
+	uv run ferros add-agent -c config/$(1).yaml.j2 -e $(ENV_FILE) -s openai
 endef
 
 .PHONY: sync run format lint mypy tests coverage run link-path link-data test-context task-run
@@ -86,8 +87,14 @@ add-agents:
 	done
 
 list-agents:
-	uv run ferros list-agents -e .env.agent.local
+	uv run ferros list-agents -e $(ENV_FILE)
 
+stream-results:
+	@if [ -z "$(TASK_ID)" ]; then \
+		echo "Error: TASK_ID is not set"; \
+		exit 1; \
+	fi
+	uv run ferros stream -t $(TASK_ID) -e $(ENV_FILE)
 # monitor:
 # 	docker compose stop redis minio clickhouse langfuse-worker langfuse-web --env-file .env.compose || true
 # 	docker compose rm -f redis minio clickhouse langfuse-worker langfuse-web --env-file .env.compose || true

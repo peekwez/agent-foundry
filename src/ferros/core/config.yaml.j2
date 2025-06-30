@@ -2,6 +2,11 @@ provider:
   api_key: {{ env.MODEL_API_KEY }}
   base_url: {{ env.MODEL_BASE_URL }}
 
+files:
+    base_dir: {{ env.FILES_BASE_DIR | default('files') }}
+    max_size: {{ env.FILES_MAX_SIZE | default(104857600) }}
+    allowed_extensions: {{ env.FILES_ALLOWED_EXTENSIONS | default(['txt', 'csv', 'json', 'md']) }}
+
 logging:
     enabled: {{ env.LOG_ENABLED | default(true) }}
     level: {{ env.LOG_LEVEL | default('info') }}

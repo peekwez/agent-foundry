@@ -5,6 +5,8 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from ferros.core.parsers import load_config_file
 
+MB_100 = 104857600  # 100 MB
+
 
 class BaseSettings(BaseModel):
     @classmethod
@@ -26,6 +28,19 @@ class ProviderSettings(BaseSettings):
     api_key: str = Field(..., description="API key for the model provider.")
     base_url: str | None = Field(
         default=None, description="Base URL for the model provider."
+    )
+
+
+class FilesSettings(BaseSettings):
+    base_dir: str = Field(
+        default="files", description="Base directory for file storage."
+    )
+    max_size: int = Field(
+        default=MB_100, description="Maximum size for uploaded files."
+    )
+    allowed_extensions: list[str] = Field(
+        default=["txt", "csv", "json", "md"],
+        description="List of allowed file extensions.",
     )
 
 
@@ -90,6 +105,10 @@ class LoggingSettings(BaseSettings):
 class Settings(BaseSettings):
     provider: ProviderSettings = Field(
         ..., description="Configuration for the model provider."
+    )
+    files: FilesSettings = Field(
+        default=FilesSettings(),
+        description="Configuration for file handling and storage.",
     )
     logging: LoggingSettings = Field(
         default=LoggingSettings(),
