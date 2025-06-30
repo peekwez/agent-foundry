@@ -28,7 +28,7 @@ async def run_agent(
     guid = trace_id.split("_")[-1]
 
     async with get_mcp_server(
-        "sse",
+        "streamable-http",
         cache_tools_list=True,
         name="Blackboard MCP Server",
         client_session_timeout_seconds=180,

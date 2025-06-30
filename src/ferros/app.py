@@ -1,5 +1,5 @@
 import uuid
-from typing import Annotated
+from typing import Annotated, Any
 
 import arrow
 import uvicorn
@@ -69,11 +69,11 @@ async def run_task(task_config: TaskConfig) -> dict[str, str]:
 
 @app.post("/run-task/form")
 async def run_task_form(
-    goal: Annotated[str, Form],
-    contexts: Annotated[list[AnyUrl], Form],
-    files: Annotated[list[UploadFile], File],
-    revisions: int = Form(3),
-) -> dict[str, str]:
+    goal: Annotated[str, Form()],
+    files: Annotated[list[UploadFile], File()],
+    context_urls: Annotated[str, Form()] = "",
+    revisions: Annotated[int, Form()] = 2,
+) -> dict[str, Any]:
     """
     Run the agent with the provided form data.
 
@@ -83,13 +83,23 @@ async def run_task_form(
     # upload file to mcp blackboard server and use response to create
     # contexts - https, http, s3, abs, etc.
     trace_id = f"{uuid.uuid4().hex}"
-    contexts = []
+    contexts: list[AnyUrl] = []
+
+    # Parse any provided context URLs
+    if context_urls:
+        url_list = [url.strip() for url in context_urls.split(",")]
+        for url in url_list:
+            if url:
+                contexts.append(AnyUrl(url))
+
+    # Process uploaded files
     for file in files:
         data = await file.read()
         ret: dict[str, str] = await save_file(
             data, trace_id, file.filename if file.filename else "file"
         )
         contexts.append(AnyUrl(ret.get("file_url", "")))
+
     task = TaskConfig(
         goal=goal, contexts=contexts, revisions=revisions, trace_id=trace_id
     )
