@@ -17,6 +17,7 @@ blackboard:
     redis_username: {{env.BLACKBOARD_REDIS_USERNAME | default('') }}
     redis_password: {{env.BLACKBOARD_REDIS_PASSWORD | default('') }}
     mcp_server: {{env.BLACKBOARD_MCP_SERVER | default('http://localhost:8000/sse')}}
+    mcp_transport: {{env.BLACKBOARD_MCP_TRANSPORT | default('sse')}}
 
 registry:
     redis_host: {{env.REGISTRY_REDIS_HOST | default('127.0.0.1')}}

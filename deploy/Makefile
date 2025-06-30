@@ -1,15 +1,57 @@
 include Make.in
 
-REGISTRY_NAME=docker.agent-foundry.canadacentral.cloudapp.azure.com
+REGISTRY_NAME=agent-foundry.canadacentral.cloudapp.azure.com:8888
+LOCAL_REGISTRY_NAME=localhost:8888
+FOUNDRY_IMAGE=agent-foundry/amd64
+BLACKBOARD_IMAGE=blackboard-mcp/amd64
 TAG:=latest
 
+all: build tag push clean-up
+
+clean-up:
+	$(call log_green, Cleaning up Docker containers and images...)
+	docker rmi $(FOUNDRY_IMAGE):$(TAG) || true
+	docker rmi $(BLACKBOARD_IMAGE):$(TAG) || true
+	docker rmi $(REGISTRY_NAME)/$(FOUNDRY_IMAGE):$(TAG) || true
+	docker rmi $(REGISTRY_NAME)/$(BLACKBOARD_IMAGE):$(TAG) || true
+
+build:
+	$(call log_green, Building Docker images...)
+	docker build -t $(FOUNDRY_IMAGE):$(TAG) \
+		-f ../Dockerfile ../ --platform linux/amd64
+	docker build -t $(BLACKBOARD_IMAGE):$(TAG) \
+		-f ../mcp-blackboard/Dockerfile ../mcp-blackboard --platform linux/amd64
+
+tag:
+	$(call log_green, Tagging Docker images...)
+	docker tag $(FOUNDRY_IMAGE):$(TAG) $(REGISTRY_NAME)/$(FOUNDRY_IMAGE):$(TAG)
+	docker tag $(BLACKBOARD_IMAGE):$(TAG) $(REGISTRY_NAME)/$(BLACKBOARD_IMAGE):$(TAG)
 
 push:
 	$(call log_green, Pushing Docker images to the registry...)
-	docker tag agent-foundry-api/python312:$(TAG) $(REGISTRY_NAME)/agent-foundry-api/python312:$(TAG) || true
-	docker push $(REGISTRY_NAME)/agent-foundry-api/python312:$(TAG)
-	docker tag blackboard-mcp/python313:$(TAG) $(REGISTRY_NAME)/blackboard-mcp/python313:$(TAG) || true
-	docker push $(REGISTRY_NAME)/blackboard-mcp/python313:$(TAG)
+	docker push $(REGISTRY_NAME)/$(BLACKBOARD_IMAGE):$(TAG)
+	docker push $(REGISTRY_NAME)/$(FOUNDRY_IMAGE):$(TAG)
+
+pull:
+	$(call log_green, Pulling Docker images from the registry...)
+	docker pull $(LOCAL_REGISTRY_NAME)/$(BLACKBOARD_IMAGE):$(TAG)
+	docker pull $(LOCAL_REGISTRY_NAME)/$(FOUNDRY_IMAGE):$(TAG)
+	docker tag $(LOCAL_REGISTRY_NAME)/$(FOUNDRY_IMAGE):$(TAG) $(FOUNDRY_IMAGE):$(TAG)
+	docker tag $(LOCAL_REGISTRY_NAME)/$(BLACKBOARD_IMAGE):$(TAG) $(BLACKBOARD_IMAGE):$(TAG)
+	docker rmi $(LOCAL_REGISTRY_NAME)/$(FOUNDRY_IMAGE):$(TAG) || true
+	docker rmi $(LOCAL_REGISTRY_NAME)/$(BLACKBOARD_IMAGE):$(TAG) || true
+
+up: pull
+	$(call log_green, Starting Docker containers with custom environment file...)
+	docker compose --env-file .env.compose up -d --remove-orphans
+
+down:
+	$(call log_green, Stopping Docker containers and removing orphaned containers...)
+	docker compose down --remove-orphans
+
+check:
+	$(call log_green, Checking Docker containers...)
+	docker compose ps
 
 init: down
 	docker volume rm $$(docker volume ls -q --filter dangling=true) || true
@@ -25,19 +67,9 @@ init: down
 	mkdir -p data/agent-foundry/worker/logs || true
 	mkdir -p data/agent-foundry/api/logs || true
 
-up:
-    $(call log_green, Starting Docker containers...)
-    docker compose up -d --env-file .env.compose
-
-down:
-    $(call log_green, Stopping Docker containers...)
-    docker compose down
-
-check:
-    $(call log_green, Checking Docker containers...)
-    docker compose ps
-
 clean:
-    $(call log_green, Cleaning up Docker containers and images...)
-    docker system prune -f
-    docker container prune -f
+	$(call log_green, Cleaning up Docker containers and images...)
+	docker system prune -f
+	docker container prune -f
+	docker volume prune -f
+	docker network prune -f

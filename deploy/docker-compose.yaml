@@ -1,6 +1,6 @@
 services:
   agent-foundry-api:
-    image: agent-foundry/python312:latest
+    image: agent-foundry/amd64
     container_name: agent-foundry-api
     restart: always
     env_file: .env.agent
@@ -32,7 +32,7 @@ services:
       retries: 3
 
   agent-foundry-worker:
-    image: agent-foundry/python312:latest
+    image: agent-foundry/amd64
     container_name: agent-foundry-worker
     restart: always
     env_file: .env.agent
@@ -63,7 +63,7 @@ services:
     volumes:
       - agent_registry_data:/data
     ports:
-      - 127.0.0.1:6382:6379
+      - 6379:6379
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 3s
@@ -71,7 +71,7 @@ services:
       retries: 10
 
   blackboard-mcp:
-    image: blackboard-mcp/python313
+    image: blackboard-mcp/amd64
     container_name: blackboard-mcp
     env_file: .env.blackboard
     environment:
@@ -101,7 +101,7 @@ services:
     image: redis/redis-stack:latest
     container_name: blackboard-mem
     ports:
-      - 127.0.0.1:6381:6379
+      - 127.0.0.1:6380:6379
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 3s
@@ -212,6 +212,7 @@ services:
       VIRTUAL_HOST: ${DOMAIN:-}
       LETSENCRYPT_HOST: ${DOMAIN:-}
       LETSENCRYPT_EMAIL: ${EMAIL:-}
+
   clickhouse:
     image: clickhouse/clickhouse-server
     container_name: clickhouse

@@ -2,7 +2,7 @@ import json
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from datetime import timedelta
-from typing import Any, Literal
+from typing import Any
 
 from agents.mcp import (
     MCPServer,
@@ -18,9 +18,7 @@ from ferros.core.utils import get_settings
 RESULT_TOOL_NAME = "GetResult"
 
 
-def get_params(
-    transport: Literal["streamable-http", "sse"] = "streamable-http",
-) -> MCPServerStreamableHttpParams | MCPServerSseParams:
+def get_params() -> MCPServerStreamableHttpParams | MCPServerSseParams:
     """
     Get the parameters for the MCP server.
 
@@ -28,20 +26,22 @@ def get_params(
         MCPServerStreamableHttpParams: The parameters for the MCP server.
     """
     settings = get_settings()
-    if transport == "sse":
+    if settings.blackboard.mcp_transport == "sse":
         return MCPServerSseParams(
             url=f"{settings.blackboard.mcp_server}/sse",
             headers={},
             timeout=180,
             sse_read_timeout=180,
         )
-    elif transport == "streamable-http":
+    elif settings.blackboard.mcp_transport == "streamable-http":
         return MCPServerStreamableHttpParams(
             url=f"{settings.blackboard.mcp_server}/blackboard/mcp",
             headers={},
             timeout=timedelta(seconds=180),
             sse_read_timeout=timedelta(seconds=180),
         )
+    else:
+        raise ValueError(f"Unknown transport: {settings.blackboard.mcp_transport}")
 
 
 # Import your server classes
@@ -49,17 +49,17 @@ def get_params(
 
 @asynccontextmanager
 async def get_mcp_server(
-    transport: Literal["streamable-http", "sse"],
     **kwargs: Any,
 ) -> AsyncGenerator[MCPServerSse, MCPServerStreamableHttp]:
-    if transport == "streamable-http":
-        server_cls = MCPServerStreamableHttp
-    elif transport == "sse":
-        server_cls = MCPServerSse
+    settings = get_settings()
+    params = get_params()
+    if settings.blackboard.mcp_transport == "streamable-http":
+        server_cls = MCPServerStreamableHttp  # type: ignore
+    elif settings.blackboard.mcp_transport == "sse":
+        server_cls = MCPServerSse  # type: ignore
     else:
-        raise ValueError(f"Unknown transport: {transport}")
+        raise ValueError(f"Unknown transport: {settings.blackboard.mcp_transport}")
 
-    params = get_params(transport=transport)
     async with server_cls(params=params, **kwargs) as server:  # type: ignore
         yield server  # type: ignore
 

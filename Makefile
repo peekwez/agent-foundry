@@ -110,3 +110,7 @@ foundry:
 	docker compose rm -f agent-foundry-api agent-foundry-worker || true
 	docker build -t agent-foundry/python312 .
 	docker compose --env-file .env.compose up -d agent-foundry-api agent-foundry-worker
+
+vm-deploy:
+	rsync -avzh deploy/* azureuser@agent-foundry:~/deploy/
+	rsync -avzh deploy/.env* azureuser@agent-foundry:~/deploy/

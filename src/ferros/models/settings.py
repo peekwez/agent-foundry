@@ -50,6 +50,10 @@ class BlackboardSettings(RedisSettings):
     mcp_server: str = Field(
         default="http://localhost:8000", description="MCP server URL."
     )
+    mcp_transport: Literal["sse", "streamable-http"] = Field(
+        default="sse",
+        description="Transport protocol for the MCP server.",
+    )
 
 
 class RegistrySettings(RedisSettings):
