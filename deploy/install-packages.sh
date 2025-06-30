@@ -18,4 +18,4 @@ sudo groupadd docker
 sudo usermod -aG docker $USER
 newgrp docker
 
-sudo apt-get install make
+sudo apt-get install make tree

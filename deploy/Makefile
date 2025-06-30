@@ -41,6 +41,10 @@ pull:
 	docker rmi $(LOCAL_REGISTRY_NAME)/$(FOUNDRY_IMAGE):$(TAG) || true
 	docker rmi $(LOCAL_REGISTRY_NAME)/$(BLACKBOARD_IMAGE):$(TAG) || true
 
+stop:
+	$(call log_green, Stopping Docker containers...)
+	docker compose stop || true
+
 up: pull
 	$(call log_green, Starting Docker containers with custom environment file...)
 	docker compose --env-file .env.compose up -d --remove-orphans
