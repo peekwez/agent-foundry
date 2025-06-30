@@ -1,28 +1,53 @@
 #!/bin/bash
 set -e
 base=agent-foundry.canadacentral.cloudapp.azure.com
+config_file="/etc/nginx/sites-available/$base"
 
-function add_nginx_site {
-    local site_name=$1
-    local port=$2
-    sudo tee /etc/nginx/sites-available/$site_name <<EOF
+sudo tee "$config_file" > /dev/null <<EOF
 server {
    listen 80;
-   server_name $site_name;
-   location / {
-       proxy_pass http://localhost:$port;
-       proxy_set_header Host \$host;
-       proxy_set_header X-Real-IP \$remote_addr;
-       proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-   }
-}
-EOF
-sudo ln -s /etc/nginx/sites-available/$site_name /etc/nginx/sites-enabled/
+   server_name $base;
+   return 301 https://\$host\$request_uri;
 }
 
-add_nginx_site "docker.$base" 8888
-add_nginx_site "store.$base" 9000
-add_nginx_site "langfuse.$base" 3000
-add_nginx_site "api.$base" 5000
-add_nginx_site "mcp.$base" 8000
+server {
+   listen 443 ssl;
+   server_name $base;
+
+    ssl_certificate /etc/letsencrypt/live/$base/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/$base/privkey.pem;
+
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers on;
+
+    location /docker/ {
+        proxy_pass http://localhost:8888/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+    location /store/ {
+        proxy_pass http://localhost:9000/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+    location /langfuse/ {
+        proxy_pass http://localhost:3000/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+    location /api/ {
+        proxy_pass http://localhost:5000/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+    location /mcp/ {
+        proxy_pass http://localhost:8000/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+EOF
+
+sudo ln -s "$config_file" /etc/nginx/sites-enabled/
+sudo nginx -t
 sudo systemctl restart nginx
