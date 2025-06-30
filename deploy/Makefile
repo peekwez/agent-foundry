@@ -47,6 +47,10 @@ stop:
 
 up: pull
 	$(call log_green, Starting Docker containers with custom environment file...)
+	if [ ! -f .env.agent ] || [ ! -f .env.compose ] || [ ! -f .env.blackboard ]; then \
+		$(call log_green, "Error: Required environment files (.env.agent, .env.compose, .env.blackboard) not found."); \
+		exit 1; \
+	fi
 	docker compose --env-file .env.compose up -d --remove-orphans
 
 down:
