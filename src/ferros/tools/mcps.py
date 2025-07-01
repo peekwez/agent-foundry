@@ -35,7 +35,7 @@ def get_params() -> MCPServerStreamableHttpParams | MCPServerSseParams:
         )
     elif settings.blackboard.mcp_transport == "streamable-http":
         return MCPServerStreamableHttpParams(
-            url=f"{settings.blackboard.mcp_server}/blackboard/mcp",
+            url=f"{settings.blackboard.mcp_server}/mcp",
             headers={},
             timeout=timedelta(seconds=180),
             sse_read_timeout=timedelta(seconds=180),

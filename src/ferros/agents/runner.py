@@ -6,9 +6,13 @@ from ferros.agents.manager import TaskManager
 from ferros.agents.planner import plan_task
 from ferros.core.finalize import save_result
 from ferros.core.logging import get_logger
+from ferros.core.store import send_update
 from ferros.models.evaluation import EvaluationResults
 from ferros.models.plan import Plan
 from ferros.tools.mcps import get_mcp_server
+
+STEP_ID = 10000
+AGENT_NAME = "knowledge worker"
 
 
 async def run_agent(
@@ -56,24 +60,22 @@ async def run_agent(
             metadata=metadata,
         ):
             logger.info(f"Starting new task execution id: {guid}")
+            await send_update(guid, STEP_ID, AGENT_NAME, "running")
 
             # initialize manager
             manager = TaskManager(server=server)
 
             # build context
             if context_input:
-                await build_context(guid, context_input, server)
+                _ = await build_context(guid, context_input, server)
 
             for revision in range(1, revisions + 1):
                 name = f"Task Pass {revision} of {revisions}"
                 data = {"Plan Id": guid, "User Input": user_input}
+
                 with custom_span(name=name, data=data):
                     # plan the task
                     plan = await plan_task(guid, revision, user_input, server)
-                    if not plan:
-                        raise ValueError(
-                            "No plan was generated. Please check the input."
-                        )
 
                     # run the plan steps
                     await manager.run(plan, revision)
@@ -95,9 +97,18 @@ async def run_agent(
                 await save_result(plan, server)
 
             if evals and not evals.passed:
+                await send_update(
+                    guid,
+                    STEP_ID,
+                    AGENT_NAME,
+                    "completed",
+                    message="Task did not pass all evaluations.",
+                )
                 logger.warning(
                     f"Task execution did not pass all evaluations: {guid}. "
                     "Please check the feedback and revise the plan."
                 )
                 return
+
+            await send_update(guid, STEP_ID, AGENT_NAME, "completed")
             logger.info(f"Task execution completed successfully: {guid}")

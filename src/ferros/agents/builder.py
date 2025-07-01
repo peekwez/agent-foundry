@@ -6,8 +6,12 @@ from agents import Agent, RunContextWrapper, Runner, custom_span
 from agents.mcp import MCPServer
 
 from ferros.core.logging import get_logger
+from ferros.core.store import send_update
 from ferros.core.utils import get_settings
 from ferros.models.context import Context
+
+STEP_ID = 50000
+AGENT_NAME = "context builder"
 
 
 def get_instructions(context: RunContextWrapper, agent: Agent) -> str:
@@ -81,14 +85,20 @@ async def build_context(
         name="Context Building",
         data={"Plan Id": plan_id, "Context Input": context_input},
     ):
+        await send_update(plan_id, STEP_ID, AGENT_NAME, "running")
         logger.info(
             f"Building context for plan {plan_id} with input: {context_input[:100]}..."
         )
         input = f"{context_input}\n\nUse the UUID: {plan_id} as the plan id."
-        agent = get_builder(mcp_servers=[server])
-        result = await Runner.run(agent, input=input, max_turns=20)
-        context: Context = result.final_output
-        size = len(context.contexts)
-        logger.info(f"✔ Context created with {size} items...")
-
-    return context
+        try:
+            agent = get_builder(mcp_servers=[server])
+            result = await Runner.run(agent, input=input, max_turns=20)
+            context: Context = result.final_output
+            size = len(context.contexts)
+            logger.info(f"✔ Context created with {size} items...")
+            await send_update(plan_id, STEP_ID, AGENT_NAME, "completed")
+            return context
+        except Exception as e:
+            await send_update(plan_id, STEP_ID, AGENT_NAME, "failed")
+            logger.exception(f"Failed to build context for plan {plan_id}: {e}")
+            raise e

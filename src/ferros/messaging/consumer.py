@@ -94,7 +94,12 @@ async def consume_tasks() -> None:
                         logger.error(
                             f"Error processing task with ID {config.trace_id}: {e}"
                         )
-                    redis.xack(STREAM_NAME, GROUP_NAME, message_id)  # type: ignore
+                    else:
+                        logger.info(
+                            f"Task with ID {config.trace_id} processed successfully."
+                        )
+                    finally:
+                        redis.xack(STREAM_NAME, GROUP_NAME, message_id)  # type: ignore
                     logger.info(f"Processed task with ID: {config.trace_id}")
                     # Process the task data here
     except Exception as e:

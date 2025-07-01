@@ -1,0 +1,22 @@
+meta {
+  name: Save File
+  type: http
+  seq: 2
+}
+
+put {
+  url: {{blackboardUrl}}/save-file
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "file_path": "test-kwesi/test.txt",
+    "data": "data:text/plain;base64,TXkgbmFtZSBpcyBLd2VzaSBBcHBvbnNhaA=="
+  }
+}
+
+assert {
+  res.status: eq 201
+}

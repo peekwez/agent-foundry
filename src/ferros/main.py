@@ -29,8 +29,12 @@ async def run(
     logger.info(f"Config loaded from {_file.name}.")
     config.revisions = revisions
     config.trace_id = trace_id or config.trace_id
-    logger.info(f"Running agent with trace ID: {config.trace_id}.")
-    await run_agent(
-        config.goal, config.context_strings, config.revisions, config.trace_id
-    )
-    logger.info("✔ Task completed successfully.")
+    logger.info(f"Running agent with trace Id: {config.trace_id}.")
+    try:
+        await run_agent(
+            config.goal, config.context_strings, config.revisions, config.trace_id
+        )
+    except Exception as e:
+        logger.exception(f"An error occurred while running the agent: {e}")
+    else:
+        logger.info("✔ Task completed successfully.")

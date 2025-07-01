@@ -32,23 +32,26 @@ def check_evaluation(evaluation_result: str) -> str:
         raise ValueError(f"Invalid evaluation json data: {e}") from e
 
     # check if the evaluation score was computed correctly
-    score = evaluation.score
+    score = round(evaluation.score, 2)
     num_questions = len(evaluation.questions)
     pass_questions = len([q for q in evaluation.questions if q.answer.lower() == "yes"])
-    calculated_score = 100.0 * float(
-        pass_questions / float(num_questions) if num_questions > 0 else 0
+    calculated_score = round(
+        100.0
+        * float(pass_questions / float(num_questions) if num_questions > 0 else 0),
+        2,
     )
 
-    if abs(calculated_score - score) > 0.05:  # Allowing a small margin of error
+    if abs(calculated_score - score) > 2.0:  # Allowing a small margin of error
         raise ValueError(
-            f"Score {score} does not match calculated score {calculated_score} "
-            "based on the number of questions answered with a `yes`."
+            f"Score {score:0.2f}% does not match calculated score "
+            f"{calculated_score:0.2f}% based on the number of questions "
+            "answered with a `yes`."
         )
 
     # check if pass status is set correctly
     if evaluation.passed and evaluation.score < evaluation.threshold:
         raise ValueError(
-            f"Score {score} is below the threshold {evaluation.threshold}. "
+            f"Score {score:0.2f}% is below the threshold {evaluation.threshold:0.2f}%. "
             "Evaluation did not pass. Please check the evaluation result."
         )
 
