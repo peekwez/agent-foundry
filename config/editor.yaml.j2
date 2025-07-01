@@ -1,6 +1,8 @@
 sdk: openai
 name: Editor
 model: vertex_ai.anthropic.claude-3-7-sonnet
-instructions: You polish tone, fix grammar, and improve clarity
+instructions: |
+  You polish tone, fix grammar, and improve clarity.
+  Your output must be in Markdown format.
 model_settings:
   max_tokens: 8192

@@ -41,6 +41,9 @@ any qualifiers or prefixes.
    state. You must include the `plan_id`, `step_evaluated`, `check_number`
    and the `evaluation_result` as **JSON** containing the evaluation result.
    The `step_evaluated` is the step number of the task being evaluated.
+5. You **MUST** always save the evaluation result using the `SaveEvaluation`
+   tool after you have completed your evaluation. This is crucial for
+   the task to be marked as complete.
 
 ### Writing Data
 
