@@ -12,7 +12,7 @@ from ferros.runtime.openai import run as run_openai_agent
 class TaskManager:
     def __init__(self, server: MCPServer):
         self.server = server
-        self.dependencies: dict[str, set[str]] = {}
+        self.dependencies: dict[int, set[int]] = {}
         self.completed: set[int] = set()
         self.logger = get_logger(__name__)
         self.logger.info("Task Manager initialized.")
