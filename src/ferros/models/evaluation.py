@@ -28,14 +28,21 @@ class EvaluationResult(BaseModel):
         description="A list of evaluation questions.",
     )
     revision: int = Field(
-        default=1,
+        ...,
         description=(
             "The revision of the plan that is being evaluated. This is set based "
             "on the plan revision."
         ),
     )
+    step_evaluated: int = Field(
+        ...,
+        description=(
+            "The step number of the task being evaluated. This is the step that the "
+            "evaluation is based on."
+        ),
+    )
     check_number: int = Field(
-        default=1,
+        ...,
         description=(
             "The check number for the evaluation. This is set to 1 by default "
             "unless specified otherwise in the task goal."
@@ -141,7 +148,10 @@ class EvaluationResults(BaseModel):
             str: Concatenated feedback from all evaluations.
         """
         feedback_lines = [
-            f"Check {result.check_number}: {result.planning_feedback}"
+            (
+                f"Check {result.check_number} (Score {result.score:0.2f}%):"
+                f"{result.planning_feedback}\n\n"
+            )
             for result in self.results
             if result.planning_feedback
         ]

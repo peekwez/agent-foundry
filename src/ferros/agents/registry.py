@@ -168,6 +168,7 @@ def get_registry() -> RedisAgentRegistry:
 
         RedisAgentRegistry: The global agent registry instance.
     """
+
     global registry
     if registry is None:
         registry = RedisAgentRegistry()

@@ -54,6 +54,7 @@ async def save_result(plan: Plan, server: MCPServer) -> None:
     if file_path.exists():
         logger.info(f"File {file_path} already exists. Overwriting...")
     result = await fetch_output(plan, server)
+    logger.info(f"Fetched last step result for plan {plan.id}")
     with open(file_path, "w", encoding="utf-8") as f:
         f.write(result)
 

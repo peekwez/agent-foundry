@@ -1,9 +1,13 @@
-from agents import gen_trace_id, trace
+from agents import custom_span, gen_trace_id, trace
 
 from ferros.agents.builder import build_context
-from ferros.agents.executor import execute_plan
+from ferros.agents.evaluator import evaluate_result
+from ferros.agents.manager import TaskManager
 from ferros.agents.planner import plan_task
 from ferros.core.finalize import save_result
+from ferros.core.logging import get_logger
+from ferros.models.evaluation import EvaluationResults
+from ferros.models.plan import Plan
 from ferros.tools.mcps import get_mcp_server
 
 
@@ -12,6 +16,7 @@ async def run_agent(
     context_input: str | list[str] | dict[str, str] | None,
     revisions: int = 3,
     trace_id: str | None = None,
+    session_id: str | None = None,
 ) -> None:
     """
     Run the agent to perform a task based on user input and context.
@@ -22,28 +27,77 @@ async def run_agent(
         revisions (int): The number of revisions to perform if needed.
         trace_id (str | None): The trace ID for the run. If None, a new trace ID
             will be generated.
+        session_id (str | None): The session ID for the run. If None, a new session
+            ID will be generated.
     """
 
     trace_id = gen_trace_id() if trace_id is None else trace_id
     guid = trace_id.split("_")[-1]
+    revision_prefix = (
+        "The evaluation did not pass. Please revise the "
+        "plan based on the feedback: \n\n"
+    )
+    logger = get_logger(__name__)
+
+    plan: Plan | None = None
+    evals: EvaluationResults | None = None
 
     async with get_mcp_server(
         cache_tools_list=True,
         name="Blackboard MCP Server",
         client_session_timeout_seconds=180,
     ) as server:
+        metadata = {"Plan Id": guid, "User Input": user_input}
+        short_id = guid.upper()[:8]
         with trace(
-            workflow_name=f"Knowledge Worker: {guid.upper()[:8]}", trace_id=trace_id
+            workflow_name=f"Knowledge Worker: {short_id}",
+            trace_id=trace_id,
+            group_id=session_id,
+            metadata=metadata,
         ):
+            logger.info(f"Starting new task execution id: {guid}")
+
+            # initialize manager
+            manager = TaskManager(server=server)
+
             # build context
             if context_input:
                 await build_context(guid, context_input, server)
 
-            # plan the task
-            plan = await plan_task(guid, 1, user_input, server)
+            for revision in range(1, revisions + 1):
+                name = f"Task Pass {revision} of {revisions}"
+                data = {"Plan Id": guid, "User Input": user_input}
+                with custom_span(name=name, data=data):
+                    # plan the task
+                    plan = await plan_task(guid, revision, user_input, server)
+                    if not plan:
+                        raise ValueError(
+                            "No plan was generated. Please check the input."
+                        )
 
-            # execute the plan, replan, and revise output if required
-            revised_plan = await execute_plan(guid, plan, server, revisions)
+                    # run the plan steps
+                    await manager.run(plan, revision)
 
-            # save the result to a file
-            await save_result(revised_plan, server)
+                    # evaluate the results from the last step
+                    evals = await evaluate_result(plan, revision, server, checks=3)
+
+                if evals.passed:
+                    # if the evaluation passed, break the loop
+                    break
+
+                # prepare the user input for the next iteration or final output
+                user_input = (
+                    f"Plan goal:\n{plan.goal}\n\n{revision_prefix}{evals.feedback}"
+                )
+
+            # save results
+            if plan:
+                await save_result(plan, server)
+
+            if evals and not evals.passed:
+                logger.warning(
+                    f"Task execution did not pass all evaluations: {guid}. "
+                    "Please check the feedback and revise the plan."
+                )
+                return
+            logger.info(f"Task execution completed successfully: {guid}")

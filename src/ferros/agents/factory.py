@@ -27,6 +27,7 @@ def register_agent(sdk: SDKType, file_path: str) -> None:
     Returns:
         None
     """
+
     logger = get_logger(__name__)
     registry = get_registry()
     cls: type[AgentSDKConfig] = SDK_CLASS_MAP.get(sdk, AgentSDKConfig)
@@ -44,5 +45,6 @@ def get_agent_configs() -> AgentsConfig:
     Returns:
         AgentsConfig: A list of all registered agents.
     """
+
     registry = get_registry()
     return registry.list()

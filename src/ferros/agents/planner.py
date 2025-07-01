@@ -1,7 +1,7 @@
 import pathlib
 from typing import Any
 
-from agents import Agent, RunContextWrapper, Runner
+from agents import Agent, RunContextWrapper, Runner, custom_span
 from agents.mcp import MCPServer
 
 from ferros.agents.factory import get_agent_configs
@@ -9,7 +9,9 @@ from ferros.core.logging import get_logger
 from ferros.core.utils import get_settings
 from ferros.models.agents import AgentsConfig
 from ferros.models.plan import Plan
-from ferros.tools.web_search import web_search_tool
+
+PLANNER_MESSAGE = "✔ Task plan created with {num_of_steps} steps..."
+REPLANNER_MESSAGE = "✔ Task re-planning created with {num_of_steps} steps..."
 
 
 def get_instructions(
@@ -77,7 +79,7 @@ def get_planner(
 
 
 async def plan_task(
-    plan_id: str, revision: int, user_input: str, server: MCPServer
+    plan_id: str, revision: int, prompt: str, server: MCPServer
 ) -> Plan:
     """
     Plan the task using the planner agent.
@@ -85,26 +87,23 @@ async def plan_task(
     Args:
         plan_id (str): The unique identifier for the plan.
         revision (int): The revision number for the plan.
-        user_input (str): The user input for the task.
+        prompt (str): The prompt for the planner agent.
         server (MCPServerSse): The MCP server to fetch the output from.
 
     Returns:
         Plan: The generated plan object with the steps for the task.
     """
+
     logger = get_logger(__name__)
-    input = f"{user_input}\n\nUse the UUID: {plan_id} as the plan id."
-    context = get_agent_configs()
-    agent = get_planner(
-        tools=[web_search_tool], mcp_servers=[server], replanner=revision > 1
-    )
-
-    result = await Runner.run(agent, input=input, max_turns=20, context=context)
-    plan: Plan = result.final_output
-
-    size = len(plan.steps)
-    if agent.name == "Planner":
-        logger.info(f"✔ Task plan created with {size} steps...")
-    elif agent.name == "Re-Planner":
-        new_size = len([s for s in plan.steps if s.status == "pending"])
-        logger.info(f"✔ Task re-planning created with {new_size} steps...")
+    input = f"{prompt}\n\nUse the UUID: {plan_id} as the plan id."
+    name = "Planning" if revision == 1 else "Re-Planning"
+    with custom_span(name=name, data={"Plan Id": plan_id, "Revision": revision}):
+        logger.info(f"Planning task {plan_id} with goal: {input[:30]}...")
+        context = get_agent_configs()
+        message = REPLANNER_MESSAGE if revision > 1 else PLANNER_MESSAGE
+        agent = get_planner(mcp_servers=[server], replanner=revision > 1)
+        result = await Runner.run(agent, input=input, max_turns=20, context=context)
+        plan: Plan = result.final_output
+        num_of_steps = len([s for s in plan.steps if s.revision == revision])
+        logger.info(message.format(num_of_steps=num_of_steps))
     return plan
