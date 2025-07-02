@@ -1,6 +1,6 @@
 OPTION := mortgage
-TASK_FILE := $$(pwd)/samples/mortgage/_task-new.old.yaml
-ENV_FILE := $$(pwd)/.env.agent.vm
+TASK_FILE := $$(pwd)/samples/mortgage/_task-new.yaml
+ENV_FILE := $$(pwd)/.env.agent.local
 TASK_ID ?=
 REVISIONS := 1
 AGENT_NAMES:= researcher extractor analyzer writer editor

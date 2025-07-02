@@ -1,3 +1,4 @@
+import asyncio
 import uuid
 from typing import Annotated, Any
 
@@ -9,7 +10,11 @@ from pydantic import AnyUrl
 from ferros.core.logging import get_logger
 from ferros.core.store import save_file
 from ferros.messaging.producer import publish_task
-from ferros.messaging.streamer import stream_task_updates
+from ferros.messaging.streamer import (
+    TaskResult,
+    stream_task_updates,
+    unwrap_stream_data,
+)
 from ferros.models.task import TaskConfig
 
 app = FastAPI(
@@ -114,16 +119,20 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
     try:
         while True:
             data = await websocket.receive_json(mode="text")
-            await websocket.send_text(f"Message received: {data}")
-
+            logger.info(f"Received data: {data}")
             task_id = data.get("task_id", None)
             if not task_id:
                 await websocket.send_text("No task ID provided.")
                 continue
 
+            result = TaskResult()
             async for update in stream_task_updates(task_id):
-                logger.info(f"Update for task {task_id}: {update}")
                 await websocket.send_json(update)
+                unwrap_stream_data(update, result)
+                await asyncio.sleep(0.1)
+                if result.is_completed:
+                    logger.info(f"Task streaming {task_id} completed.")
+                    break
 
     except WebSocketDisconnect:
         logger.info("Client disconnected from WebSocket.")
