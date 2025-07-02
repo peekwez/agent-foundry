@@ -22,6 +22,8 @@ generate_server_block() {
     local INTERNAL_PORT="$3"
     local CONFIG_FILE="$NGINX_SITES_AVAILABLE/$NAME"
     echo "Creating NGINX config for $NAME (public: $EXTERNAL_PORT → local: $INTERNAL_PORT)"
+
+    # Start with basic configuration
     sudo tee "$CONFIG_FILE" > /dev/null <<EOF
 server {
    listen $EXTERNAL_PORT ssl;
@@ -36,8 +38,28 @@ server {
        proxy_set_header X-Real-IP \$remote_addr;
        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
    }
+EOF
+
+    # Add WebSocket support for the API server only
+    if [ "$NAME" == "api" ]; then
+        sudo tee -a "$CONFIG_FILE" > /dev/null <<EOF
+   location /ws/run-task/updates {
+       proxy_pass http://localhost:$INTERNAL_PORT/ws/run-task/updates;
+       proxy_http_version 1.1;
+       proxy_set_header Upgrade \$http_upgrade;
+       proxy_set_header Connection "upgrade";
+       proxy_set_header Host \$host;
+       proxy_set_header X-Real-IP \$remote_addr;
+       proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+   }
+EOF
+    fi
+
+    # Close the server block
+    sudo tee -a "$CONFIG_FILE" > /dev/null <<EOF
 }
 EOF
+
     # Enable the site
     sudo unlink "$NGINX_SITES_ENABLED/$NAME" || true
     sudo ln -sf "$CONFIG_FILE" "$NGINX_SITES_ENABLED/$NAME"
