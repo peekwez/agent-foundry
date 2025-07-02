@@ -100,5 +100,5 @@ async def build_context(
             return context
         except Exception as e:
             await send_update(plan_id, STEP_ID, AGENT_NAME, "failed")
-            logger.exception(f"Failed to build context for plan {plan_id}: {e}")
+            logger.error(f"Failed to build context for plan {plan_id}: {e}")
             raise e

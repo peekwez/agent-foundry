@@ -6,7 +6,7 @@ def get_step(
     steps: list[PlanStep],
     index: int | None = None,
     is_last: bool = True,
-) -> PlanStep:
+) -> PlanStep | None:
     """
     Get the last agent from a list of agents.
 
@@ -34,4 +34,7 @@ def get_step(
             "Index must be an integer or None. If None, the last step will be returned."
         )
 
-    return sorted(filter(fn, steps), key=lambda x: x.id)[index]
+    try:
+        return sorted(filter(fn, steps), key=lambda x: x.id)[index]
+    except IndexError:
+        return None

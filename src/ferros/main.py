@@ -35,6 +35,6 @@ async def run(
             config.goal, config.context_strings, config.revisions, config.trace_id
         )
     except Exception as e:
-        logger.exception(f"An error occurred while running the agent: {e}")
+        logger.error(f"An error occurred while running the agent: {e}")
     else:
         logger.info("✔ Task completed successfully.")

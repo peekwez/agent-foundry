@@ -28,6 +28,12 @@ async def fetch_output(plan: Plan, server: MCPServer) -> str:
     step = get_step("Editor", plan.steps, is_last=True)
     if not step:
         step = get_step("Writer", plan.steps, is_last=True)
+
+    if not step:
+        raise ValueError(
+            "No result found in memory. Please run the plan first to generate results."
+        )
+
     value = await get_result(plan.id, str(step.id), step.agent_name, server)
     return value if isinstance(value, str) else json.dumps(value, indent=2)
 
