@@ -1,0 +1,6 @@
+goal: |
+  Write a one-page memo describing the contents of the attached
+  letter of employment and incluede key details needed for a mortgage application.
+
+contexts:
+  - s3://agent-foundry-datastore/mortgage/loe_sample.png

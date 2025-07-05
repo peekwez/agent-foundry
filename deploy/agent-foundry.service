@@ -1,0 +1,25 @@
+[Unit]
+Description=Agent Foundry Docker Service
+After=docker-registry.service
+Requires=docker-registry.service
+
+[Service]
+Restart=always
+
+[Service]
+Restart=always
+User=azureuser
+WorkingDirectory=/home/azureuser/deploy
+ExecStartPre=/usr/bin/docker pull localhost:8888/agent-foundry/amd64:latest
+ExecStartPre=/usr/bin/docker pull localhost:8888/blackboard-mcp/amd64:latest
+ExecStartPre=/usr/bin/docker tag localhost:8888/agent-foundry/amd64:latest agent-foundry/amd64:latest
+ExecStartPre=/usr/bin/docker tag localhost:8888/blackboard-mcp/amd64:latest blackboard-mcp/amd64:latest
+ExecStartPre=/usr/bin/docker rmi localhost:8888/agent-foundry/amd64:latest
+ExecStartPre=/usr/bin/docker rmi localhost:8888/blackboard-mcp/amd64:latest
+ExecStartPre=/usr/bin/docker compose down --remove-orphans
+ExecStart=/usr/bin/docker compose up --env-file .env.compose
+ExecStop=/usr/bin/docker compose down --remove-orphans
+TimeoutStartSec=0
+
+[Install]
+WantedBy=multi-user.target

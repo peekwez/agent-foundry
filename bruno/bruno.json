@@ -1,0 +1,11 @@
+{
+  "version": "1",
+  "name": "ferros",
+  "type": "collection",
+  "ignore": [".git", ".gitignore", "node_modules", "artifacts", "reader.js"],
+  "scripts": {
+    "fileSystemAccess": {
+      "allow": true
+    }
+  }
+}

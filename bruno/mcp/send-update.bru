@@ -1,0 +1,28 @@
+meta {
+  name: Send Update
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{blackboardUrl}}/send-update
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "plan_id": "test-kwesi",
+    "action": "update-status",
+    "data": {
+      "step_id": 10000,
+      "agent_name": "knowledge worker",
+      "status": "running",
+      "message": null
+    }
+  }
+}
+
+assert {
+  res.status: eq 201
+}

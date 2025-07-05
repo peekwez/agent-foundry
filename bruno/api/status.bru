@@ -1,0 +1,16 @@
+meta {
+  name: API Status
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/
+  body: none
+  auth: inherit
+}
+
+assert {
+  res.status: eq 200
+  res.body.message: Welcome to the Agent foundry API!
+}

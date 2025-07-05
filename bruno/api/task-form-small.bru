@@ -1,0 +1,21 @@
+meta {
+  name: Submit Task Form - Small
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/run-task/form
+  body: multipartForm
+  auth: inherit
+}
+
+body:multipart-form {
+  goal: '''
+    Write a one-page memo describing the contents of the attached
+    letter of employment and include key details needed for a mortgage
+    application.
+  '''
+  context_urls: https://laws-lois.justice.gc.ca/eng/regulations/SOR-2012-281/page-1.html
+  files: @file(artifacts/loe_sample.png)
+}

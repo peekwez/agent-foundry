@@ -1,0 +1,53 @@
+provider:
+  api_key: {{ env.MODEL_API_KEY }}
+  base_url: {{ env.MODEL_BASE_URL }}
+
+files:
+    base_dir: {{ env.FILES_BASE_DIR | default('files') }}
+    max_size: {{ env.FILES_MAX_SIZE | default(104857600) }}
+    allowed_extensions: {{ env.FILES_ALLOWED_EXTENSIONS | default(['txt', 'csv', 'json', 'md']) }}
+
+logging:
+    enabled: {{ env.LOG_ENABLED | default(true) }}
+    level: {{ env.LOG_LEVEL | default('info') }}
+    root_dir : {{ env.LOG_ROOT_DIR | default('logs/agent-foundry') }}
+    rotation: {{ env.LOG_ROTATION | default('100 MB') }}
+    retention: {{ env.LOG_RETENTION | default('30 days') }}
+    compression: {{ env.LOG_COMPRESSION | default('zip') }}
+
+blackboard:
+    redis_host: {{env.BLACKBOARD_REDIS_HOST | default('127.0.0.1')}}
+    redis_port: {{env.BLACKBOARD_REDIS_PORT | default(6379)}}
+    redis_db: {{env.BLACKBOARD_REDIS_DB | default(1)}}
+    redis_username: {{env.BLACKBOARD_REDIS_USERNAME | default('') }}
+    redis_password: {{env.BLACKBOARD_REDIS_PASSWORD | default('') }}
+    mcp_server: {{env.BLACKBOARD_MCP_SERVER | default('http://localhost:8000')}}
+    mcp_transport: {{env.BLACKBOARD_MCP_TRANSPORT | default('sse')}}
+
+registry:
+    redis_host: {{env.REGISTRY_REDIS_HOST | default('127.0.0.1')}}
+    redis_port: {{env.REGISTRY_REDIS_PORT | default(6379)}}
+    redis_db: {{env.REGISTRY_REDIS_DB | default(1)}}
+    redis_username: {{env.REGISTRY_REDIS_USERNAME | default('') }}
+    redis_password: {{env.REGISTRY_REDIS_PASSWORD | default('') }}
+
+context:
+    name: 'Context Builder'
+    model: {{ env.CONTEXT_BUILDER_MODEL }}
+    model_settings:
+        temperature: {{ env.CONTEXT_BUILDER_TEMPERATURE }}
+        max_tokens: {{ env.CONTEXT_BUILDER_MAX_TOKENS }}
+
+planner:
+    name: 'Planner'
+    model: {{ env.PLANNER_MODEL }}
+    model_settings:
+        temperature: {{ env.PLANNER_TEMPERATURE }}
+        max_tokens: {{ env.PLANNER_MAX_TOKENS }}
+
+evaluator:
+    name: 'Evaluator'
+    model: {{ env.EVALUATOR_MODEL }}
+    model_settings:
+        temperature: {{ env.EVALUATOR_TEMPERATURE }}
+        max_tokens: {{ env.EVALUATOR_MAX_TOKENS }}

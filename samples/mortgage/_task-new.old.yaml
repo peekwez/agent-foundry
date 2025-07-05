@@ -1,0 +1,29 @@
+goal: |
+  Write a one-page memo presenting the results of the analysis of the
+  mortgage application for a client. Review the letter of employment,
+  pay stub and credit information. The letter of employment annual salary
+  and pay stub amount should not have a variance of more than 5%.
+
+  The credit score should not be less than 650. The client can qualify for a
+  mortgage amount that is equivalent to 5 times their annual gross salary.
+
+  The memo should comment on the consistency of the employer and employer names
+  on the letter of employment and pay stub.
+
+  Include the expected down payment amount (i.e., 5-20%), the mortgage amount,
+  and any recommendations for the client. Use the average prevailing interest
+  rate across the big 4 Canadian banks to estimate the monthly mortgage payments.
+  The client should be able to afford the monthly payment amount.
+
+  First time home buyers can make 5% down payment. If the mortgage
+  amount is $1,000,000 or more the client is expected to make a 20% down payment.
+
+  The memo should be addressed to the credit manager, and must include the
+  client name, mortgage amount, down payment, and monthly payment amount.
+  Include any additional recommendations.
+
+contexts:
+  - s3://agent-foundry-datastore/mortgage/loe_sample.png
+  - s3://agent-foundry-datastore/mortgage/ps_sample.png
+  - s3://agent-foundry-datastore/mortgage/credit_report.pdf
+  - https://laws-lois.justice.gc.ca/eng/regulations/SOR-2012-281/page-1.html
