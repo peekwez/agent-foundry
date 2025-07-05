@@ -1,3 +1,0 @@
-[submodule "mcp-blackboard"]
-	path = mcp-blackboard
-	url = git@github.com:peekwez/mcp-blackboard.git
