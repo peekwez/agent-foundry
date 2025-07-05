@@ -1,0 +1,12 @@
+# Define color codes
+BLUE := \033[34m
+GREEN := \033[32m
+YELLOW := \033[33m
+RED := \033[31m
+RESET := \033[0m
+
+# Define log functions for different colors
+log_blue = @echo "$(BLUE)>> $(1)$(RESET)"
+log_green = @echo "$(GREEN)>> $(1)$(RESET)"
+log_yellow = @echo "$(YELLOW)>> $(1)$(RESET)"
+log_red = @echo "$(RED)>> $(1)$(RESET)"

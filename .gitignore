@@ -147,3 +147,10 @@ results
 tmp
 src.zip
 Archive.zip
+.env*
+mlruns/
+mlartifacts/
+mlflow
+secrets
+logs
+files/

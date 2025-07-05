@@ -1,0 +1,20 @@
+[Unit]
+Description=Private Docker Registry
+After=docker.service
+Requires=docker.service
+
+[Service]
+Restart=always
+
+[Service]
+Restart=always
+ExecStartPre=-/usr/bin/docker stop my-private-registry
+ExecStartPre=-/usr/bin/docker rm my-private-registry
+ExecStartPre=/usr/bin/docker pull registry:2
+ExecStartPre=sudo mkdir -p /var/lib/registry
+ExecStartPre=sudo chown -R 1000:1000 /var/lib/registry
+ExecStart=/usr/bin/docker run --name my-private-registry -p 8888:5000 --restart=always -v /var/lib/registry:/var/lib/registry registry:2
+ExecStop=/usr/bin/docker stop my-private-registry
+
+[Install]
+WantedBy=multi-user.target
